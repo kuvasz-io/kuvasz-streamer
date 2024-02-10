@@ -1,0 +1,26 @@
+#!/bin/bash -x
+export REGISTRY=docker.io
+for VER in 12 13 14 15 16; do
+    docker pull ${REGISTRY}/postgres:${VER}
+done
+
+docker compose down
+docker compose up -d
+
+for PORT in 6012 6013 6014 6015 6016; do
+    until pg_isready -h 127.0.0.1 -p ${PORT} -d postgres -U postgres;
+        do sleep 1;
+    done;
+    psql postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "create user kuvasz password 'kuvasz' createdb replication;"
+    psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/postgres -f database/source.sql
+done
+psql postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
+
+killall kuvasz-streamer
+../kuvasz-streamer > log/kuvasz-streamer.log 2>&1 &
+
+sleep 3
+
+robot --exitonfailure -d log testsuite
+docker compose down
+killall kuvasz-streamer

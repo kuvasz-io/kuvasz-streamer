@@ -1,0 +1,17 @@
+[server]
+name = "kuvasz-streamer"
+address = ":8000"
+pprof = "127.0.0.1:6060"
+
+[logs]
+output="console"
+level="debug"
+format="text"
+source=false
+
+[database]
+url = "postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=kuvasz-streamer"
+
+[app]
+map_file = "./conf/map.yaml"
+

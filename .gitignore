@@ -1,0 +1,6 @@
+kuvasz-streamer
+.vscode
+.DS_Store
+test/log/*
+test/*.xml
+test/*.log

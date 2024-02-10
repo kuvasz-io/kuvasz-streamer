@@ -1,0 +1,19 @@
+[Unit]
+Description=Kuvasz Streaming Extract Transform Load Tool
+Documentation=https://streamer.kuvasz.io
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=kuvasz
+Group=kuvasz
+Type=simple
+WorkingDirectory=/var/lib/kuvasz-streamer
+ExecStart=/usr/bin/kuvasz-streamer
+LimitNOFILE=10000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
