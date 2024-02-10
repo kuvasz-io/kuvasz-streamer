@@ -21,6 +21,9 @@ check:
 build:
 	go build -o ${BINARY} -ldflags="${LDFLAGS}" ./cmd/*.go
 
+test:
+	cd test; ./run
+
 docker:
 	@echo ${BRANCHNAME}
 	@echo ${VERSION}
@@ -71,4 +74,5 @@ install:
 clean:
 	rm -f ${BINARY}
 
+.PHONY: test
 

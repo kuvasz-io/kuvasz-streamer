@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -14,13 +15,16 @@ type (
 	syncReader struct {
 		DataChannel    chan []byte
 		CommandChannel chan string
+		log            *slog.Logger
 	}
 	syncWriter struct {
 		DataChannel chan []byte
+		log         *slog.Logger
 	}
 )
 
 func (r syncReader) Read(p []byte) (int, error) {
+	log := r.log
 	select {
 	case command := <-r.CommandChannel:
 		log.Debug("received command", "command", command)
@@ -33,14 +37,16 @@ func (r syncReader) Read(p []byte) (int, error) {
 }
 
 func (w syncWriter) Write(p []byte) (int, error) {
+	log := w.log
 	log.Debug("write chunk", "chunk", p)
 	w.DataChannel <- p
 	return len(p), nil
 }
 
 func writeDestination(log *slog.Logger, tableName string, columns string, dataChannel chan []byte, commandChannel chan string) {
-	r := &syncReader{DataChannel: dataChannel, CommandChannel: commandChannel}
-	ctx := context.Background()
+	r := &syncReader{DataChannel: dataChannel, CommandChannel: commandChannel, log: log}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	defer cancel()
 	conn, err := DestConnectionPool.Acquire(ctx)
 	if err != nil {
 		log.Error("cannot acquire connection to destination database", "error", err)
@@ -52,6 +58,7 @@ func writeDestination(log *slog.Logger, tableName string, columns string, dataCh
 		return
 	}
 	log.Debug("COPY FROM", "tag", tag)
+	conn.Release()
 }
 
 func syncTable(log *slog.Logger,
@@ -59,11 +66,14 @@ func syncTable(log *slog.Logger,
 	sourceTableName string,
 	destTableName string,
 	sourceConnection *pgconn.PgConn) error {
+	log = log.With("sourceTable", sourceTableName, "destTable", destTableName)
 	ctx := context.Background()
+
+	log.Debug("Starting sync")
 	// Prepare channels between reader and writer
 	dataChannel := make(chan []byte)
 	commandChannel := make(chan string)
-	w := &syncWriter{DataChannel: dataChannel}
+	w := &syncWriter{DataChannel: dataChannel, log: log}
 
 	// Prepare column list
 	columns := ""
@@ -73,6 +83,7 @@ func syncTable(log *slog.Logger,
 		}
 		columns = fmt.Sprintf("%s, %s", columns, c)
 	}
+	log.Debug("Target columns", "columns", columns)
 
 	// Start writer
 	go writeDestination(log, destTableName, columns, dataChannel, commandChannel)
@@ -81,8 +92,8 @@ func syncTable(log *slog.Logger,
 	copyStatement := fmt.Sprintf("COPY (SELECT '%s'%s FROM %s) TO STDOUT;", sid, columns, sourceTableName)
 	tag, err := sourceConnection.CopyTo(ctx, w, copyStatement)
 	if err != nil {
-		log.Error("Cannot copy t1", "error", err)
-		return fmt.Errorf("cannot perform full sync")
+		log.Error("Cannot read source table", "error", err)
+		return fmt.Errorf("cannot perform full sync, error reading source=%s, dest=%s", sourceTableName, destTableName)
 	}
 	log.Debug("COPY TO", "tag", tag)
 

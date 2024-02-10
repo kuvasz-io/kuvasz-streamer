@@ -18,8 +18,7 @@ psql postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
 
 killall kuvasz-streamer
 ../kuvasz-streamer > log/kuvasz-streamer.log 2>&1 &
-
-sleep 3
+sleep 5
 
 robot --exitonfailure -d log testsuite
 docker compose down

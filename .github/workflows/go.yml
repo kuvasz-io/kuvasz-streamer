@@ -1,0 +1,20 @@
+name: Go
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build
+      run: go build -o kuvasz-streamer -v ./...
+
+    - name: Run tests
+      run: cd test; ./run

@@ -1,6 +1,10 @@
 kuvasz-streamer
 .vscode
 .DS_Store
-test/log/*
+test/log/*.xml
+test/log/*.log
+test/log/*.html
 test/*.xml
 test/*.log
+test/*.html
+dist/

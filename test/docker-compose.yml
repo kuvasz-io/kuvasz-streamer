@@ -3,7 +3,7 @@ version: '3.8'
 services:
   pg16:
     image: postgres:16
-    command: -c wal_level=logical -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
@@ -11,7 +11,7 @@ services:
       - 6016:5432
   pg15:
     image: postgres:15
-    command: -c wal_level=logical -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
@@ -19,7 +19,7 @@ services:
       - 6015:5432
   pg14:
     image: postgres:14
-    command: -c wal_level=logical -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
@@ -27,7 +27,7 @@ services:
       - 6014:5432
   pg13:
     image: postgres:13
-    command: -c wal_level=logical -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
@@ -35,7 +35,7 @@ services:
       - 6013:5432
   pg12:
     image: postgres:12
-    command: -c wal_level=logical -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
