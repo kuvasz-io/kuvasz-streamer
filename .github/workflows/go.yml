@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: write
+
 jobs:
 
   build:
@@ -21,3 +24,6 @@ jobs:
     
     - name: Release
       run: goreleaser release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
