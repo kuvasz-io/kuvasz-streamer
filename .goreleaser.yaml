@@ -32,8 +32,4 @@ archives:
         format: zip
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+  disable: true
