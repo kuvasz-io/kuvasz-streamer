@@ -6,11 +6,7 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions:
-  contents: write
-
 jobs:
-
   build:
     runs-on: self-hosted
     steps:
@@ -21,9 +17,3 @@ jobs:
 
     - name: Run tests
       run: cd test; ./run
-    
-    - name: Release
-      run: goreleaser release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
