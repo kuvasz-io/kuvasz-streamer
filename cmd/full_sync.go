@@ -69,7 +69,7 @@ func syncTable(log *slog.Logger,
 	log = log.With("sourceTable", sourceTableName, "destTable", destTableName)
 	ctx := context.Background()
 
-	log.Debug("Starting sync")
+	log.Debug("Starting full sync")
 	// Prepare channels between reader and writer
 	dataChannel := make(chan []byte)
 	commandChannel := make(chan string)

@@ -162,9 +162,12 @@ func ReplicateDatabase(databaseURL string, sid string, sourceTables map[string]S
 			log.Error("Cannot perform initial sync")
 			return
 		}
+		log.Debug("Finished full table sync")
+		time.Sleep(time.Duration(config.Server.StartDelay) * time.Second)
 	}
 
 	// Start replication
+	log.Debug("Starting replication slot")
 	protocolVersion, args := pluginArguments(ver, slotName)
 	err = pglogrepl.StartReplication(
 		ctx,
@@ -179,7 +182,7 @@ func ReplicateDatabase(databaseURL string, sid string, sourceTables map[string]S
 		log.Error("StartReplication failed", "error", err)
 		return
 	}
-	log.Info("Started logical replication", "slotname", slotName, "lsn", lsn)
+	log.Info("Started logical replication slot", "slotname", slotName, "lsn", lsn)
 
 	// Start streaming and processing messages
 	clientXLogPos := sysident.XLogPos

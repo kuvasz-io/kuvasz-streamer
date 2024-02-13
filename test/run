@@ -1,24 +1,50 @@
 #!/bin/bash -x
+
+function gen() {
+    while true
+    do
+        for PORT in 6012 6013 6014 6015 6016; do
+            psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t7(name) values('test');" > log/gen.log 2>&1
+        done
+        sleep 1
+    done
+}
+
+# Clean any existing process
+killall kuvasz-streamer
+
+# Pull latest minor version
 export REGISTRY=docker.io
 for VER in 12 13 14 15 16; do
     docker pull ${REGISTRY}/postgres:${VER}
 done
 
+# Start postgres containers
 docker compose down
 docker compose up -d
 
+# Wait until all instances are ready
 for PORT in 6012 6013 6014 6015 6016; do
     until pg_isready -h 127.0.0.1 -p ${PORT} -d postgres -U postgres;
         do sleep 1;
     done;
+done
+
+# Create user and databases
+for PORT in 6012 6013 6014 6015 6016; do
     psql postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "create user kuvasz password 'kuvasz' createdb replication;"
     psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/postgres -f database/source.sql
 done
 psql postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
 
-killall kuvasz-streamer
-../kuvasz-streamer > log/kuvasz-streamer.log 2>&1 &
+# Start generating data
+gen &
+pid=$!
 sleep 5
+
+../kuvasz-streamer > log/kuvasz-streamer.log 2>&1 &
+sleep 10
+kill $pid
 
 robot --exitonfailure -d log testsuite
 docker compose down

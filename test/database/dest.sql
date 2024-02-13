@@ -62,4 +62,6 @@ create table t5(
 
 create table t6(sid text, t text);
 
+create table t7(sid text, id bigint, ts timestamptz, name text);
+
 create table s1(sid text, id int, name text, salary int, garbage date);

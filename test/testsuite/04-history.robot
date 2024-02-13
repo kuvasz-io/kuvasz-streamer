@@ -1,5 +1,5 @@
 *** Settings ***
-Resource           common.robot
+Resource           00-common.robot
 Suite Setup        Connect To All Databases
 Suite Teardown     Disconnect From All Databases
 
