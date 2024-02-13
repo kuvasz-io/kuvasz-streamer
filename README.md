@@ -216,8 +216,8 @@ The postgres replication protocol provides the necessary information to propagat
 
 ## References
 
-Use postgres logical replication
-
+- Article
+  - https://www.postgresql.fastware.com/blog/inside-logical-replication-in-postgresql
 - Documentation
   - https://www.postgresql.org/docs/current/logical-replication.html
   - https://www.postgresql.org/docs/current/logicaldecoding.html
