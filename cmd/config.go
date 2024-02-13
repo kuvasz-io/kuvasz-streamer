@@ -15,9 +15,10 @@ import (
 
 type (
 	ServerConfig struct {
-		Name  string `koanf:"name"`
-		Addr  string `koanf:"address"`
-		Pprof string `koanf:"pprof"`
+		Name       string `koanf:"name"`
+		Addr       string `koanf:"address"`
+		Pprof      string `koanf:"pprof"`
+		StartDelay int    `koanf:"start_delay"`
 	}
 
 	DatabaseConfig struct {

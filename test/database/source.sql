@@ -56,8 +56,9 @@ create table t5(
     f45 complex
     );
 create table t6(t text);
+create table t7(id bigserial, ts timestamptz default now(), name text);
 
-create publication kuvasz_db1 for table t1,t2,t3,t4,t5,t6;
+create publication kuvasz_db1 for table t1,t2,t3,t4,t5,t6,t7;
 
 create database db2;
 \c db2

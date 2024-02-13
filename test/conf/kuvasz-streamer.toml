@@ -2,6 +2,7 @@
 name = "kuvasz-streamer"
 address = ":8000"
 pprof = "127.0.0.1:6060"
+start_delay = 5
 
 [logs]
 output="console"

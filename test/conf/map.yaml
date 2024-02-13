@@ -20,6 +20,7 @@
       type: history
     t5:
     t6:
+    t7:
 - database: db2
   urls:
   - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/db2?replication=database&application_name=repl_db2
