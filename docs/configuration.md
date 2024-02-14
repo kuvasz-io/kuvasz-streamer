@@ -3,6 +3,7 @@ layout: page
 title: Configuration
 permalink: /configuration/
 ---
+# Configuration
 
 ## Service configuration
 

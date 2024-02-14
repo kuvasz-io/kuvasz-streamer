@@ -12,8 +12,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Vet
+      run: make check
     - name: Build
-      run: go build -o kuvasz-streamer -v ./...
-
+      run: make build
     - name: Run tests
-      run: cd test; ./run
+      run: make test
+    - name: Build and publish docs
+      run: make docs
+    
+

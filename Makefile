@@ -24,6 +24,11 @@ build:
 test:
 	cd test; ./run
 
+docs:
+	cd docs; jekyll build
+	rm -rf /var/www/caddy/streamer/*
+	cp -r docs/_site/* /var/www/caddy/streamer
+
 docker:
 	@echo ${BRANCHNAME}
 	@echo ${VERSION}
@@ -74,5 +79,5 @@ install:
 clean:
 	rm -f ${BINARY}
 
-.PHONY: test
+.PHONY: check build test docs package install clean
 
