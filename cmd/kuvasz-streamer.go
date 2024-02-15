@@ -30,7 +30,7 @@ var (
 
 func main() {
 	Configure(
-		[]string{"kuvasz-streamer.toml", "./conf/kuvasz-streamer.toml", "/etc/kuvasz-streamer.toml"},
+		[]string{"./conf/kuvasz-streamer.toml", "/etc/kuvasz/kuvasz-streamer.toml"},
 		"KUVASZ",
 	)
 	SetupLogs(config.Logs)

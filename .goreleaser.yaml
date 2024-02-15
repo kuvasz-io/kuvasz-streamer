@@ -32,5 +32,29 @@ archives:
       - goos: windows
         format: zip
 
+nfpms:
+  - vendor: Kuvasz.io
+    homepage: https://streamer.kuvasz.io/
+    maintainer: Kuvasz <kuvasz@kuvasz.io>
+    description: |-
+      Kuvasz-Streamer is a Postgres-to-Postgres
+      data consolidation and change data capture project.
+    license: AGPL-3.0
+    formats:
+      - deb
+      - rpm
+    umask: 0o002
+    provides:
+      - kuvasz-streamer
+    contents:
+      - src: package/kuvasz-streamer.service
+        dst: /usr/lib/systemd/system/kuvasz-streamer.service
+      - src: package/etc/
+        dst: /etc
+        type: tree
+    scripts:
+      postinstall: package/postinstall.sh
+      postremove: package/postremove.sh
+
 changelog:
   disable: true

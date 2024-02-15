@@ -12,5 +12,5 @@ source=false
 url = "postgres://kuvasz:kuvasz@127.0.0.1/dest?application_name=kuvasz-streamer"
 
 [app]
-map_file = "./conf/map.yaml"
+map_file = "/etc/kuvasz/map.yaml"
 

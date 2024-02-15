@@ -1,5 +1,5 @@
 [Unit]
-Description=Kuvasz Streaming Extract Transform Load Tool
+Description=Kuvasz Streamer
 Documentation=https://streamer.kuvasz.io
 Wants=network-online.target
 After=network-online.target
@@ -8,7 +8,6 @@ After=network-online.target
 User=kuvasz
 Group=kuvasz
 Type=simple
-WorkingDirectory=/var/lib/kuvasz-streamer
 ExecStart=/usr/bin/kuvasz-streamer
 LimitNOFILE=10000
 Restart=always

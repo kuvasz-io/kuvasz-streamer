@@ -85,7 +85,7 @@ func GetTables(log *slog.Logger, database *pgxpool.Pool, schemaName string) (PGT
 		pgTables[tableName] = pgTable
 	}
 	if len(pgTables) == 0 {
-		return pgTables, fmt.Errorf("cannot read destination metadata, check user rights, schema=%s", schemaName)
+		return pgTables, fmt.Errorf("empty destination metadata, check user rights and destination database schema, schema=%s", schemaName)
 	}
 	log.Debug("Got tables", "tables", pgTables)
 
