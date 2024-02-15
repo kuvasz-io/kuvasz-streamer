@@ -7,7 +7,7 @@ gomod:
     - GOSUMDB=sum.golang.org
     # - GOPRIVATE=example.com/blah
 
-  mod: mod
+  mod: readonly
   gobinary: go
 
 builds:
