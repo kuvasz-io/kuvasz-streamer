@@ -5,7 +5,7 @@ gomod:
   env:
     - GOPROXY=https://proxy.golang.org,direct
     - GOSUMDB=sum.golang.org
-    # - GOPRIVATE=example.com/blah
+    - GOPRIVATE=kuvasz.io/kuvasz-streamer
 
   mod: readonly
   gobinary: go
