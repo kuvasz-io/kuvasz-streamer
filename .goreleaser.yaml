@@ -8,7 +8,7 @@ gomod:
     # - GOPRIVATE=example.com/blah
 
   mod: mod
-  gobinary: go1.21
+  gobinary: go
 
 builds:
   - env:
