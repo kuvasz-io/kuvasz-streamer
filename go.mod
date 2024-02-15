@@ -1,4 +1,4 @@
-module kuvasz.io/kuvasz-streamer
+module github.com/kuvasz-io/kuvasz-streamer
 
 go 1.21.6
 
