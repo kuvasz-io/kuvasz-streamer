@@ -1,5 +1,15 @@
 version: 1
 
+gomod:
+  proxy: true
+  env:
+    - GOPROXY=https://proxy.golang.org,direct
+    - GOSUMDB=sum.golang.org
+    # - GOPRIVATE=example.com/blah
+
+  mod: mod
+  gobinary: go1.21
+
 builds:
   - env:
       - CGO_ENABLED=0
