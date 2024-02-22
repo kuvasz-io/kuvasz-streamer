@@ -7,5 +7,5 @@ Suite Teardown     Disconnect From All Databases
 Initial sync should work
     Statement should propagate
     ...    Select 1
-    ...    Select count(*) from t7
-    ...    Select count(*) from t7 where sid='{}'
+    ...    Select count(*) from t0
+    ...    Select count(*) from t0 where sid='{}'

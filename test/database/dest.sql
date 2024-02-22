@@ -5,6 +5,7 @@ CREATE TYPE complex AS (
     i       double precision
 );
 
+create table t0(sid text, id bigint, ts timestamptz, name text);
 create table t1(sid text, id int, name text, salary int, primary key (sid, id));
 create table rt2(sid text, id int, name text, salary int, extra text);
 create table t3(sid text, id int, name text, salary int, primary key (sid, id));
@@ -59,9 +60,5 @@ create table t5(
     f44 integer[],
     f45 complex
     );
-
 create table t6(sid text, t text);
-
-create table t7(sid text, id bigint, ts timestamptz, name text);
-
 create table s1(sid text, id int, name text, salary int, garbage date);

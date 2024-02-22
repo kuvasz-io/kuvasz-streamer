@@ -13,3 +13,7 @@ color_scheme: wider
 plugins:
   - jekyll-feed
 ga_tracking: G-R854TNLS2V
+
+nav_external_links:
+  - title: Test report
+    url: /report.html

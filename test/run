@@ -4,7 +4,7 @@ function gen() {
     while true
     do
         for PORT in 6012 6013 6014 6015 6016; do
-            psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t7(name) values('test');" > log/gen.log 2>&1
+            psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
         done
         sleep 1
     done
@@ -47,5 +47,6 @@ sleep 10
 kill $pid
 
 robot --exitonfailure -d log testsuite
+cp log/log.html log/report.html ../docs/
 docker compose down
 killall kuvasz-streamer

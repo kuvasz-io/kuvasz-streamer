@@ -4,7 +4,7 @@ CREATE TYPE complex AS (
     r       double precision,
     i       double precision
 );
-
+create table t0(id bigserial, ts timestamptz default now(), name text);
 create table t1(id serial primary key, name text, salary int, garbage date);
 create table t2(id int, name text, salary int, extra text);
 alter table t2 replica identity full;
@@ -55,10 +55,10 @@ create table t5(
     f44 integer[],
     f45 complex
     );
+alter table t5 replica identity full;
 create table t6(t text);
-create table t7(id bigserial, ts timestamptz default now(), name text);
 
-create publication kuvasz_db1 for table t1,t2,t3,t4,t5,t6,t7;
+create publication kuvasz_db1 for table t0,t1,t2,t3,t4,t5,t6;
 
 create database db2;
 \c db2

@@ -11,6 +11,7 @@
   - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db1?replication=database&application_name=repl_db1
     sid: 16
   tables:
+    t0:
     t1:
     t2:
       target: rt2
@@ -20,7 +21,6 @@
       type: history
     t5:
     t6:
-    t7:
 - database: db2
   urls:
   - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/db2?replication=database&application_name=repl_db2
