@@ -6,7 +6,7 @@ Library           String
 
 *** Variables ***
 ${SLEEP}          0.8
-@{PGVERSIONS}=    12    13    14    15    16
+@{PGVERSIONS}=    13    14    15    16
 
 *** Keywords ***
 Connect To All Databases
@@ -18,6 +18,7 @@ Connect To All Databases
         Execute SQL string    truncate t4 restart identity
         Execute SQL string    truncate t5 restart identity
         Execute SQL string    truncate t6 restart identity
+        Execute SQL string    truncate t7 restart identity
         Set Auto Commit
     END
     Connect To Database    psycopg2    dest   kuvasz    kuvasz    127.0.0.1    6012    alias=dest
@@ -27,6 +28,7 @@ Connect To All Databases
     Execute SQL string    truncate t4 restart identity
     Execute SQL string    truncate t5 restart identity
     Execute SQL string    truncate t6 restart identity
+    Execute SQL string    truncate t7 restart identity
     Set Auto Commit
     
 Statement should propagate

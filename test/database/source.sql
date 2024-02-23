@@ -57,8 +57,13 @@ create table t5(
     );
 alter table t5 replica identity full;
 create table t6(id int primary key, name text, longvalue text);
+create table t7(id int primary key, name text) partition by range(id);
+create table t7_0 partition of t7 for values from (0) to (9);
+create table t7_1 partition of t7 for values from (10) to (19);
+create table t7_2 partition of t7 for values from (20) to (29);
+create table t7_3 partition of t7 for values from (30) to (39);
 
-create publication kuvasz_db1 for table t0,t1,t2,t3,t4,t5,t6;
+create publication kuvasz_db1 for table t0,t1,t2,t3,t4,t5,t6,t7_0, t7_1, t7_2, t7_3;
 
 create database db2;
 \c db2
