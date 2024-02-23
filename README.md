@@ -4,7 +4,7 @@ Kuvasz-streamer is an open source change data capture (CDC) project that focuses
 
 ## Use cases
 
-Kuvasz-streamer can be used for data consolidation, major verison upgrades and other cases.
+Kuvasz-streamer can be used for data consolidation, major version upgrades and other cases.
 
 ### Microservice database consolidation
 

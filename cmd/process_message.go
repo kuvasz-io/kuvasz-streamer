@@ -130,14 +130,14 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err := MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
 		values := getValues(rel, m.Tuple.Columns, typeMap)
 		log.Debug(fmt.Sprintf("XLogData INSERT %s.%s: %v", rel.Namespace, rel.RelationName, values))
-		if sourceTables[rel.RelationName].Type == TableTypeHistory {
+		if sourceTable.Type == TableTypeHistory {
 			t0, _ := time.Parse("2006-01-02", "1900-01-01")
 			err = insertHistory(log, sid, destTable, t0, values)
 		} else {
@@ -161,7 +161,7 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		_, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return
@@ -196,19 +196,19 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err := MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
-		if sourceTables[rel.RelationName].Type == TableTypeAppend {
+		if sourceTable.Type == TableTypeAppend {
 			log.Debug("XLogDataV1 DELETE %s.%s ignored for append table type", rel.Namespace, rel.RelationName)
 			return
 		}
 		values := getValues(rel, m.OldTuple.Columns, typeMap)
 		log.Debug(fmt.Sprintf("XLogDataV1 DELETE %s.%s: %v, old: %c", rel.Namespace, rel.RelationName, values, m.OldTupleType))
 
-		if sourceTables[rel.RelationName].Type == TableTypeHistory {
+		if sourceTable.Type == TableTypeHistory {
 			err = deleteHistory(log, sid, destTable, relations[m.RelationID], values, m.OldTupleType)
 		} else {
 			err = deleteClone(log, sid, destTable, relations[m.RelationID], values, m.OldTupleType)

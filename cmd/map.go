@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"regexp"
 )
 
 type (
@@ -16,25 +17,47 @@ type (
 		SID string `yaml:"sid"`
 	}
 	SourceTable struct {
-		Type   string `yaml:"type,omitempty"`
-		Target string `yaml:"target,omitempty"`
+		Type            string `yaml:"type,omitempty"`
+		Target          string `yaml:"target,omitempty"`
+		PartitionsRegex string `yaml:"partitions_regex,omitempty"`
+		CompiledRegex   *regexp.Regexp
 	}
 )
 
-func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (string, error) {
+func FindSourceTable(relationName string, sourceTables map[string]SourceTable) string {
+	// Quick path for exact match
+	_, ok := sourceTables[relationName]
+	if ok {
+		return relationName
+	}
+	// Now try regex
+	for sourceTableName, sourceTable := range sourceTables {
+		if sourceTable.CompiledRegex == nil {
+			continue
+		}
+		if sourceTable.CompiledRegex.MatchString(relationName) {
+			return sourceTableName
+		}
+	}
+	return ""
+
+}
+
+func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (*SourceTable, string, error) {
 	var destTable string
-	sourceTable, ok := sourceTables[relationName]
-	if !ok {
-		return "", fmt.Errorf("unconfigured source table=%s", relationName)
+	sourceTable := FindSourceTable(relationName, sourceTables)
+	if sourceTable == "" {
+		return nil, "", fmt.Errorf("unconfigured source table=%s", relationName)
 	}
-	if sourceTable.Target != "" {
-		destTable = sourceTable.Target
+	t := sourceTables[sourceTable]
+	if t.Target == "" {
+		destTable = sourceTable
 	} else {
-		destTable = relationName
+		destTable = t.Target
 	}
-	_, ok = destTables[destTable]
+	_, ok := destTables[destTable]
 	if !ok {
-		return "", fmt.Errorf("destination table does not exist, table=%s", destTable)
+		return nil, "", fmt.Errorf("destination table does not exist, table=%s", destTable)
 	}
-	return destTable, nil
+	return &t, destTable, nil
 }

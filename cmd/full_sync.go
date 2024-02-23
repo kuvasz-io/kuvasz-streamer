@@ -104,7 +104,7 @@ func syncTable(log *slog.Logger,
 
 func syncAllTables(log *slog.Logger, sid string, sourceTables map[string]SourceTable, sourceConnection *pgconn.PgConn) error {
 	for sourceTableName := range sourceTables {
-		destTableName, err := MapSourceTable(sourceTableName, sourceTables)
+		_, destTableName, err := MapSourceTable(sourceTableName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return err

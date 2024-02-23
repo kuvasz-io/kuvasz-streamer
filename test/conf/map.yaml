@@ -21,14 +21,8 @@
       type: history
     t5:
     t6:
-    t7_0:
-      target: t7
-    t7_1:
-      target: t7
-    t7_2:
-      target: t7
-    t7_3:
-      target: t7
+    t7:
+      partitions_regex: "t7_.*"
 
 - database: db2
   urls:

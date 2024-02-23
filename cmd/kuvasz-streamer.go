@@ -6,6 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // suppress linter error
 	"os"
+	"regexp"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"gopkg.in/yaml.v2"
@@ -70,8 +71,24 @@ func main() {
 	err = yaml.Unmarshal(data, &dbmap)
 	if err != nil {
 		log.Error("Can't unmarshal map file", "filename", config.App.MapFile, "error", err)
+		os.Exit(1)
 	}
 	log.Info(fmt.Sprintf("Map config: %v", dbmap))
+	log.Debug("Compiling partition regexes")
+	for _, db := range dbmap {
+		for k, v := range db.Tables {
+			if v.PartitionsRegex == "" {
+				continue
+			}
+			re, err := regexp.Compile(v.PartitionsRegex)
+			if err != nil {
+				log.Error("Invalid partition regex", "table", k, "regex", v.PartitionsRegex)
+				os.Exit(1)
+			}
+			v.CompiledRegex = re
+			db.Tables[k] = v
+		}
+	}
 
 	// Loop throught config and replicate databases
 	log.Info("Start processing source databases")
