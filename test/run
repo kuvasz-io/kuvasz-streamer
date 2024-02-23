@@ -50,7 +50,7 @@ sleep 5
 sleep 10
 kill $pid
 
-robot --exitonfailure -d log testsuite/07-paritions.robot
+robot --exitonfailure -d log testsuite
 cp log/log.html log/report.html ../docs/
 docker compose down
 killall kuvasz-streamer
