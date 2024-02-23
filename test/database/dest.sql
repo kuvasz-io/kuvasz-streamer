@@ -60,5 +60,5 @@ create table t5(
     f44 integer[],
     f45 complex
     );
-create table t6(sid text, t text);
+create table t6(sid text, id int, name text, longvalue text);
 create table s1(sid text, id int, name text, salary int, garbage date);

@@ -1,17 +1,21 @@
-#!/bin/bash -x
+#!/bin/bash
+set -x
+set -e
+
+PSQL="psql -v ON_ERROR_STOP=1"
 
 function gen() {
     while true
     do
         for PORT in 6012 6013 6014 6015 6016; do
-            psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+            ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
         done
         sleep 1
     done
 }
 
 # Clean any existing process
-killall kuvasz-streamer
+killall kuvasz-streamer || true
 
 # Pull latest minor version
 export REGISTRY=docker.io
@@ -32,10 +36,10 @@ done
 
 # Create user and databases
 for PORT in 6012 6013 6014 6015 6016; do
-    psql postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "create user kuvasz password 'kuvasz' createdb replication;"
-    psql postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/postgres -f database/source.sql
+    ${PSQL} postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "create user kuvasz password 'kuvasz' createdb replication;"
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/postgres -f database/source.sql
 done
-psql postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
+${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
 
 # Start generating data
 gen &

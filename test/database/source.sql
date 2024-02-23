@@ -56,8 +56,7 @@ create table t5(
     f45 complex
     );
 alter table t5 replica identity full;
-create table t6(t text);
-alter table t6 replica identity full;
+create table t6(id int primary key, name text, longvalue text);
 
 create publication kuvasz_db1 for table t0,t1,t2,t3,t4,t5,t6;
 
