@@ -52,5 +52,5 @@ kill $pid
 
 robot --exitonfailure -d log testsuite
 cp log/log.html log/report.html ../docs/
-docker compose down
-killall kuvasz-streamer
+# docker compose down
+# killall kuvasz-streamer

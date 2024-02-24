@@ -95,10 +95,9 @@ func main() {
 	for _, database := range dbmap {
 		for _, url := range database.Urls {
 			log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "id", url.SID)
-			tables := database.Tables
-			go DoReplicateDatabase(url.URL, url.SID, tables)
+			go DoReplicateDatabase(database, url)
 		}
 	}
-	// block forever
-	select {}
+	// Start API Server
+	StartAPI(log)
 }

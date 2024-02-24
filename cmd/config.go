@@ -15,10 +15,16 @@ import (
 
 type (
 	ServerConfig struct {
-		Name       string `koanf:"name"`
-		Addr       string `koanf:"address"`
-		Pprof      string `koanf:"pprof"`
-		StartDelay int    `koanf:"start_delay"`
+		Name              string `koanf:"name"`
+		Addr              string `koanf:"address"`
+		Pprof             string `koanf:"pprof"`
+		StartDelay        int    `koanf:"start_delay"`
+		ReadTimeout       int    `koanf:"read_timeout"`
+		ReadHeaderTimeout int    `koanf:"read_header_timeout"`
+		WriteTimeout      int    `koanf:"write_timeout"`
+		IdleTimeout       int    `koanf:"idle_timeout"`
+		MaxHeaderBytes    int    `koanf:"max_header_bytes"`
+		MaxGoroutines     int    `koanf:"max_goroutines"`
 	}
 
 	DatabaseConfig struct {
@@ -39,9 +45,15 @@ type (
 
 var config = Config{
 	Server: ServerConfig{
-		Name:  "kuvasz-streamer",
-		Addr:  ":8000",
-		Pprof: "",
+		Name:              "kuvasz-streamer",
+		Addr:              ":8000",
+		Pprof:             "",
+		ReadTimeout:       30,
+		ReadHeaderTimeout: 30,
+		WriteTimeout:      30,
+		IdleTimeout:       30,
+		MaxHeaderBytes:    1000,
+		MaxGoroutines:     100,
 	},
 	Logs: defaultLogsConfig,
 	Database: DatabaseConfig{

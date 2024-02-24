@@ -6,7 +6,7 @@ Library           String
 
 *** Variables ***
 ${SLEEP}          0.8
-@{PGVERSIONS}=    13    14    15    16
+@{PGVERSIONS}=    12    13    14    15    16
 
 *** Keywords ***
 Connect To All Databases

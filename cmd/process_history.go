@@ -3,21 +3,20 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 )
 
-func insertHistory(log *slog.Logger, sid string, tableName string, startTime time.Time, values map[string]any) error {
+func (op operation) insertHistory(tableName string, startTime time.Time, values map[string]any) error {
 	var query string
 	args := make([]arg, 0)
 	log = log.With("op", "insertHistory", "table", tableName)
 
 	// Build argument list
-	args = append(args, arg{"sid", sid})
+	args = append(args, arg{"sid", op.sid})
 	args = append(args, arg{"kvsz_start", startTime})
 	args = append(args, arg{"kvsz_end", "9999-01-01 00:00:00"})
 	args = append(args, arg{"kvsz_deleted", false})
-	args, err := buildSetList(log, tableName, args, values)
+	args, err := op.buildSetList(tableName, args, values)
 	if err != nil {
 		return err
 	}
@@ -40,8 +39,10 @@ func insertHistory(log *slog.Logger, sid string, tableName string, startTime tim
 	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
 		log.Error("can't insert", "query", query, "error", err)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "failure").Inc()
 		return fmt.Errorf("insertHistory failed, error=%w", err)
 	}
+	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "success").Inc()
 	return nil
 }
 
@@ -49,10 +50,9 @@ func insertHistory(log *slog.Logger, sid string, tableName string, startTime tim
 // 1. PK exists and is not updated => old = 0, oldValues=nil ==> where PK=PK and sid=SID.
 // 2. PK exists and is updated => old=K, oldValues=oldPK ==> where PK=oldPK and sid=SID.
 // 3. PK does not exist, replica full => old=O, oldValues=alloldValues ==> where allfields=alloldValues.
-func updateHistory(log *slog.Logger, sid string, tableName string, relation PGRelation,
-	values map[string]any, old uint8, oldValues map[string]any) error {
+func (op operation) updateHistory(tableName string, relation PGRelation, values map[string]any, old uint8, oldValues map[string]any) error {
 	var i = 1
-	log = log.With("op", "updateHistory", "table", tableName)
+	log = op.log.With("op", "updateHistory", "table", tableName)
 
 	t0 := time.Now()
 
@@ -66,21 +66,22 @@ func updateHistory(log *slog.Logger, sid string, tableName string, relation PGRe
 
 	// Add WHERE clause
 	query = fmt.Sprintf("%s WHERE sid=$%d AND kvsz_end='9999-01-01'", query, i)
-	queryParameters = append(queryParameters, sid)
-	query, queryParameters = buildWhere(log, tableName, relation, nil, values, old, query, queryParameters)
+	queryParameters = append(queryParameters, op.sid)
+	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 
 	// Run query
 	log.Debug("update", "query", query, "args", queryParameters)
 	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
-		log.Error("can't update", "table", tableName, "query", query, "error", err)
+		log.Error("can't update", "query", query, "error", err)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "failure").Inc()
 		return fmt.Errorf("updateHistory failed: error=%w", err)
 	}
-	err = insertHistory(log, sid, tableName, t0, values)
+	err = op.insertHistory(tableName, t0, values)
 	return nil
 }
 
-func deleteHistory(log *slog.Logger, sid string, tableName string, relation PGRelation, values map[string]any, old uint8) error {
+func (op operation) deleteHistory(tableName string, relation PGRelation, values map[string]any, old uint8) error {
 	var query string
 	log = log.With("op", "deleteHistory", "table", tableName)
 	t0 := time.Now()
@@ -88,10 +89,10 @@ func deleteHistory(log *slog.Logger, sid string, tableName string, relation PGRe
 	// Build query
 	query = fmt.Sprintf("UPDATE %s set kvsz_deleted=true, kvsz_end=$2 WHERE sid=$1 AND kvsz_end='9999-01-01' ", tableName)
 	queryParameters := make([]any, 0)
-	queryParameters = append(queryParameters, sid)
+	queryParameters = append(queryParameters, op.sid)
 	queryParameters = append(queryParameters, t0)
 
-	query, queryParameters = buildWhere(log, tableName, relation, nil, values, old, query, queryParameters)
+	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 	// Run query
 	log.Debug("delete",
 		"query", query,
@@ -102,14 +103,17 @@ func deleteHistory(log *slog.Logger, sid string, tableName string, relation PGRe
 			"query", query,
 			"queryParameters", queryParameters,
 			"error", err)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
 		return fmt.Errorf("deleteHistory failed: error=%w", err)
 	}
 	if rows.RowsAffected() == 0 {
 		log.Error("did not find row to delete, destination database was not in sync",
 			"query", query,
 			"queryParameters", queryParameters)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
 		return fmt.Errorf("deleteHistory failed: no affected rows")
 	}
+	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Inc()
 	log.Debug("delete", "RowsAffected", rows.RowsAffected())
 	return nil
 }

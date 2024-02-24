@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 )
 
 type (
@@ -14,7 +13,7 @@ type (
 	}
 )
 
-func buildSetList(log *slog.Logger, tableName string, args []arg, values map[string]any) ([]arg, error) {
+func (op operation) buildSetList(tableName string, args []arg, values map[string]any) ([]arg, error) {
 	i := 0
 	for attribute, value := range values {
 		_, ok := destTables[tableName][attribute]
@@ -33,8 +32,7 @@ func buildSetList(log *slog.Logger, tableName string, args []arg, values map[str
 	return args, nil
 }
 
-func buildWhere( //nolint:gocognit  // ignore complexity linter
-	log *slog.Logger,
+func (op operation) buildWhere( //nolint:gocognit  // ignore complexity linter
 	tableName string,
 	relation PGRelation,
 	values map[string]any,
@@ -98,15 +96,15 @@ func buildWhere( //nolint:gocognit  // ignore complexity linter
 	return query, queryParameters
 }
 
-func insertClone(log *slog.Logger, sid string, tableName string, values map[string]any) error {
+func (op operation) insertClone(tableName string, values map[string]any) error {
 	var query string
-	log = log.With("op", "insertClone", "table", tableName)
+	log = op.log.With("op", "insertClone", "table", tableName)
 
 	// Build query
 	columns := "sid"
 	valuesIndices := "$1"
 	queryParameters := make([]any, 0)
-	queryParameters = append(queryParameters, sid)
+	queryParameters = append(queryParameters, op.sid)
 	i := 2
 	for c, v := range values {
 		_, ok := destTables[tableName][c]
@@ -127,8 +125,10 @@ func insertClone(log *slog.Logger, sid string, tableName string, values map[stri
 	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
 		log.Error("can't insert", "table", tableName, "query", query, "error", err)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "failure").Inc()
 		return fmt.Errorf("insertClone failed, error=%w", err)
 	}
+	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "success").Inc()
 	return nil
 }
 
@@ -136,16 +136,15 @@ func insertClone(log *slog.Logger, sid string, tableName string, values map[stri
 // 1. PK exists and is not updated => old = 0, oldValues=nil ==> where PK=PK and sid=SID.
 // 2. PK exists and is updated => old=K, oldValues=oldPK ==> where PK=oldPK and sid=SID.
 // 3. PK does not exist, replica full => old=O, oldValues=alloldValues ==> where allfields=alloldValues.
-func updateClone(log *slog.Logger, sid string, tableName string, relation PGRelation,
-	values map[string]any, old uint8, oldValues map[string]any) error {
+func (op operation) updateClone(tableName string, relation PGRelation, values map[string]any, old uint8, oldValues map[string]any) error {
 	var i int
 	args := make([]arg, 0)
-	log = log.With("op", "updateClone", "table", tableName)
+	log = op.log.With("op", "updateClone", "table", tableName)
 
 	log.Debug("Dump params", "values", values, "oldvalues", oldValues, "old", old)
 	// Build argument list
-	args = append(args, arg{"sid", sid})
-	args, err := buildSetList(log, tableName, args, values)
+	args = append(args, arg{"sid", op.sid})
+	args, err := op.buildSetList(tableName, args, values)
 	if err != nil {
 		return err
 	}
@@ -161,43 +160,49 @@ func updateClone(log *slog.Logger, sid string, tableName string, relation PGRela
 
 	// Add WHERE clause
 	query = fmt.Sprintf("%s WHERE sid=$%d", query, i+1)
-	queryParameters = append(queryParameters, sid)
+	queryParameters = append(queryParameters, op.sid)
 
 	// add primary key
-	query, queryParameters = buildWhere(log, tableName, relation, values, oldValues, old, query, queryParameters)
+	query, queryParameters = op.buildWhere(tableName, relation, values, oldValues, old, query, queryParameters)
 
 	// Run query
 	log.Debug("update", "query", query, "queryParameters", queryParameters)
 	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
 		log.Error("can't update", "table", tableName, "query", query, "error", err)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "failure").Inc()
 		return fmt.Errorf("updateClone failed: error=%w", err)
 	}
+	// requestDuration.WithLabelValues(path, r.Method, code).Observe(float64(duration) / 1000)
+	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "success").Inc()
+
 	return nil
 }
 
-func deleteClone(log *slog.Logger, sid string, tableName string, relation PGRelation, values map[string]any, old uint8) error {
+func (op operation) deleteClone(tableName string, relation PGRelation, values map[string]any, old uint8) error {
 	var query string
-	log = log.With("op", "deleteClone", "table", tableName)
+	log = op.log.With("op", "deleteClone", "table", tableName)
 
 	log.Debug("Dump params", "relation", relation, "values", values, "old", old)
 	// Build query
 	query = fmt.Sprintf("DELETE FROM %s WHERE sid=$1 ", tableName)
 	queryParameters := make([]any, 0)
-	queryParameters = append(queryParameters, sid)
+	queryParameters = append(queryParameters, op.sid)
 
-	query, queryParameters = buildWhere(log, tableName, relation, nil, values, old, query, queryParameters)
+	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 	// Run query
 	log.Debug("delete", "query", query, "parameters", queryParameters)
 	rows, err := DestConnectionPool.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
 		log.Error("can't delete", "table", tableName, "query", query, "error", err)
 		return fmt.Errorf("deleteClone failed: error=%w", err)
 	}
 	if rows.RowsAffected() == 0 {
 		log.Error("did not find row to delete, destination database was not in sync", "query", query, "parameters", queryParameters)
+		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
 		return fmt.Errorf("deleteClone failed: no affected rows")
 	}
-
+	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Inc()
 	return nil
 }

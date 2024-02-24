@@ -97,29 +97,29 @@ func pgVersion(log *slog.Logger, conn *pgx.Conn) (int, error) {
 	return version, nil
 }
 
-func DoReplicateDatabase(databaseURL string, sid string, sourceTables map[string]SourceTable) {
+func DoReplicateDatabase(database SourceDatabase, url SourceURL) {
 	for {
-		ReplicateDatabase(databaseURL, sid, sourceTables)
+		ReplicateDatabase(database, url)
 		time.Sleep(60 * time.Second)
 	}
 }
 
 //nolint:funlen,gocognit // This is is just multiple steps and needs to be in a single function
-func ReplicateDatabase(databaseURL string, sid string, sourceTables map[string]SourceTable) {
+func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 	// Connect to selected source database
-	parsedConfig, err := pgx.ParseConfig(databaseURL)
+	log := log.With("db-sid", database.Name+"-"+url.SID)
+	parsedConfig, err := pgx.ParseConfig(url.URL)
 	if err != nil {
-		log.Error("Error parsing database url", "url", databaseURL, "sid", sid, "error", err)
+		log.Error("Error parsing database url", "url", url.URL, "error", err)
 		return
 	}
 	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	dbName := parsedConfig.Database
-	log := log.With("db-sid", dbName+"-"+sid)
-	log.Info("Connecting", "database", databaseURL, "database", dbName, "sid", sid)
+	log.Info("Connecting", "databaseURL", url.URL)
 	ctx := context.Background()
 	conn, err := pgx.ConnectConfig(ctx, parsedConfig)
 	if err != nil {
-		log.Error("Cannot start replication connection", "database", databaseURL, "error", err)
+		log.Error("Cannot start replication connection", "databaseURL", url.URL, "error", err)
 		return
 	}
 	replConn := conn.PgConn()
@@ -157,7 +157,7 @@ func ReplicateDatabase(databaseURL string, sid string, sourceTables map[string]S
 
 	// Perform full table sync if slot was just created
 	if !oldSlot {
-		err := syncAllTables(log, sid, sourceTables, replConn)
+		err := syncAllTables(log, url.SID, database.Tables, replConn)
 		if err != nil {
 			log.Error("Cannot perform initial sync")
 			return
@@ -262,7 +262,7 @@ func ReplicateDatabase(databaseURL string, sid string, sourceTables map[string]S
 			}
 
 			log.Debug("XLogData", "WALStart", xld.WALStart, "ServerWALEnd", xld.ServerWALEnd, "ServerTime", xld.ServerTime)
-			processMessage(log, sid, protocolVersion, xld.WALData, sourceTables, relations, typeMap, &inStream)
+			processMessage(log, database, url, protocolVersion, xld.WALData, relations, typeMap, &inStream)
 
 			if xld.WALStart > clientXLogPos {
 				clientXLogPos = xld.WALStart
