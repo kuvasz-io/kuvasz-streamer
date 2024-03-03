@@ -8,11 +8,9 @@ write_timeout = 30
 idle_timeout = 30
 max_header_bytes = 1000
 
-[http_server]
-
 [maintenance]
 pprof = "127.0.0.1:6060"
-start_delay = 5
+start_delay = 0
 
 [logs]
 output="console"
@@ -21,7 +19,7 @@ format="text"
 source=false
 
 [database]
-url = "postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=kuvasz-streamer"
+url = "postgres://kuvasz:kuvasz@127.0.0.1:5433/pgbench?application_name=kuvasz-streamer&sslmode=disable"
 
 [app]
 map_file = "./conf/map.yaml"

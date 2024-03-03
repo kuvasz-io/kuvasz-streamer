@@ -17,29 +17,34 @@ type (
 	ServerConfig struct {
 		Name              string `koanf:"name"`
 		Addr              string `koanf:"address"`
-		Pprof             string `koanf:"pprof"`
-		StartDelay        int    `koanf:"start_delay"`
+		MaxGoroutines     int    `koanf:"max_goroutines"`
 		ReadTimeout       int    `koanf:"read_timeout"`
 		ReadHeaderTimeout int    `koanf:"read_header_timeout"`
 		WriteTimeout      int    `koanf:"write_timeout"`
 		IdleTimeout       int    `koanf:"idle_timeout"`
 		MaxHeaderBytes    int    `koanf:"max_header_bytes"`
-		MaxGoroutines     int    `koanf:"max_goroutines"`
 	}
 
+	MaintenanceConfig struct {
+		Pprof      string `koanf:"pprof"`
+		StartDelay int    `koanf:"start_delay"`
+	}
 	DatabaseConfig struct {
 		URL string `koanf:"url"`
 	}
 
 	AppConfig struct {
-		MapFile string `koanf:"map_file"`
+		MapFile     string  `koanf:"map_file"`
+		NumWorkers  int     `koanf:"num_workers"`
+		CommitDelay float64 `koanf:"commit_delay"`
 	}
 
 	Config struct {
-		Server   ServerConfig   `koanf:"server"`
-		Logs     LogsConfig     `koanf:"logs"`
-		Database DatabaseConfig `koanf:"database"`
-		App      AppConfig      `koanf:"app"`
+		Server      ServerConfig      `koanf:"server"`
+		Maintenance MaintenanceConfig `koanf:"maintenance"`
+		Logs        LogsConfig        `koanf:"logs"`
+		Database    DatabaseConfig    `koanf:"database"`
+		App         AppConfig         `koanf:"app"`
 	}
 )
 
@@ -47,20 +52,25 @@ var config = Config{
 	Server: ServerConfig{
 		Name:              "kuvasz-streamer",
 		Addr:              ":8000",
-		Pprof:             "",
+		MaxGoroutines:     100,
 		ReadTimeout:       30,
 		ReadHeaderTimeout: 30,
 		WriteTimeout:      30,
 		IdleTimeout:       30,
 		MaxHeaderBytes:    1000,
-		MaxGoroutines:     100,
+	},
+	Maintenance: MaintenanceConfig{
+		Pprof:      "",
+		StartDelay: 0,
 	},
 	Logs: defaultLogsConfig,
 	Database: DatabaseConfig{
 		URL: "",
 	},
 	App: AppConfig{
-		MapFile: "map.yaml",
+		MapFile:     "map.yaml",
+		NumWorkers:  2,
+		CommitDelay: 1.0,
 	},
 }
 

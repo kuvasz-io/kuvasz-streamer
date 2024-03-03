@@ -1,0 +1,2 @@
+#!/bin/bash
+pgbench -U pgbench -i -s 1000 --partitions=10 pgbench

@@ -157,13 +157,13 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 
 	// Perform full table sync if slot was just created
 	if !oldSlot {
-		err := syncAllTables(log, url.SID, database.Tables, replConn)
+		err := syncAllTables(log, dbName, url.SID, database.Tables, replConn)
 		if err != nil {
 			log.Error("Cannot perform initial sync")
 			return
 		}
 		log.Debug("Finished full table sync")
-		time.Sleep(time.Duration(config.Server.StartDelay) * time.Second)
+		time.Sleep(time.Duration(config.Maintenance.StartDelay) * time.Second)
 	}
 
 	// Start replication

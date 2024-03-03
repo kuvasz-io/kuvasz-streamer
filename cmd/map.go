@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"regexp"
+
+	"gopkg.in/yaml.v2"
 )
 
 type (
@@ -20,9 +23,45 @@ type (
 		Type            string `yaml:"type,omitempty"`
 		Target          string `yaml:"target,omitempty"`
 		PartitionsRegex string `yaml:"partitions_regex,omitempty"`
-		CompiledRegex   *regexp.Regexp
+		compiledRegex   *regexp.Regexp
+		id              int
 	}
 )
+
+func ReadMapFile(filename string) {
+	// Read map
+	log := log.With("filename", filename)
+	log.Info("Reading map file")
+	var data []byte
+	data, err = os.ReadFile(filename)
+	if err != nil {
+		log.Error("Can't read map file", "error", err)
+		os.Exit(1)
+	}
+	err = yaml.Unmarshal(data, &dbmap)
+	if err != nil {
+		log.Error("Can't unmarshal map file", "error", err)
+		os.Exit(1)
+	}
+	log.Info("Read map file", "map", dbmap)
+	log.Debug("Compiling partition regexes and assigning ids")
+	i := 0
+	for _, db := range dbmap {
+		for k, v := range db.Tables {
+			if v.PartitionsRegex != "" {
+				re, err := regexp.Compile(v.PartitionsRegex)
+				if err != nil {
+					log.Error("Invalid partition regex", "table", k, "regex", v.PartitionsRegex)
+					os.Exit(1)
+				}
+				v.compiledRegex = re
+			}
+			v.id = i
+			i++
+			db.Tables[k] = v
+		}
+	}
+}
 
 func FindSourceTable(relationName string, sourceTables map[string]SourceTable) string {
 	// Quick path for exact match
@@ -32,10 +71,10 @@ func FindSourceTable(relationName string, sourceTables map[string]SourceTable) s
 	}
 	// Now try regex
 	for sourceTableName, sourceTable := range sourceTables {
-		if sourceTable.CompiledRegex == nil {
+		if sourceTable.compiledRegex == nil {
 			continue
 		}
-		if sourceTable.CompiledRegex.MatchString(relationName) {
+		if sourceTable.compiledRegex.MatchString(relationName) {
 			return sourceTableName
 		}
 	}

@@ -1,0 +1,2 @@
+#!/bin/bash
+pgbench -U pgbench -c 10 -j 2 -P 5 -T 600 pgbench

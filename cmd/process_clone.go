@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type (
@@ -96,18 +99,19 @@ func (op operation) buildWhere( //nolint:gocognit  // ignore complexity linter
 	return query, queryParameters
 }
 
-func (op operation) insertClone(tableName string, values map[string]any) error {
+func (op operation) insertClone(tx pgx.Tx) error {
 	var query string
-	log = op.log.With("op", "insertClone", "table", tableName)
+	log = op.log.With("op", "insertClone", "table", op.destTable)
 
+	t0 := time.Now()
 	// Build query
 	columns := "sid"
 	valuesIndices := "$1"
 	queryParameters := make([]any, 0)
 	queryParameters = append(queryParameters, op.sid)
 	i := 2
-	for c, v := range values {
-		_, ok := destTables[tableName][c]
+	for c, v := range op.values {
+		_, ok := destTables[op.destTable][c]
 		if !ok {
 			log.Debug("skip non-existing destination column", "column", c)
 			continue
@@ -118,17 +122,19 @@ func (op operation) insertClone(tableName string, values map[string]any) error {
 		queryParameters = append(queryParameters, v)
 		i++
 	}
-	query = fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s) on conflict do nothing", tableName, columns, valuesIndices)
+	query = fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s) on conflict do nothing", op.destTable, columns, valuesIndices)
 
 	// Run query
 	log.Debug("insert", "query", query)
-	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
+	_, err = tx.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
-		log.Error("can't insert", "table", tableName, "query", query, "error", err)
+		log.Error("can't insert", "table", op.destTable, "query", query, "error", err)
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "failure").Inc()
+		requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "failure").Observe(time.Since(t0).Seconds())
 		return fmt.Errorf("insertClone failed, error=%w", err)
 	}
 	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "success").Inc()
+	requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "insert", "success").Observe(time.Since(t0).Seconds())
 	return nil
 }
 
@@ -136,21 +142,22 @@ func (op operation) insertClone(tableName string, values map[string]any) error {
 // 1. PK exists and is not updated => old = 0, oldValues=nil ==> where PK=PK and sid=SID.
 // 2. PK exists and is updated => old=K, oldValues=oldPK ==> where PK=oldPK and sid=SID.
 // 3. PK does not exist, replica full => old=O, oldValues=alloldValues ==> where allfields=alloldValues.
-func (op operation) updateClone(tableName string, relation PGRelation, values map[string]any, old uint8, oldValues map[string]any) error {
+func (op operation) updateClone(tx pgx.Tx) error {
 	var i int
 	args := make([]arg, 0)
-	log = op.log.With("op", "updateClone", "table", tableName)
+	log = op.log.With("op", "updateClone", "table", op.destTable)
 
-	log.Debug("Dump params", "values", values, "oldvalues", oldValues, "old", old)
+	t0 := time.Now()
+	log.Debug("Dump params", "values", op.values, "oldvalues", op.oldValues, "old", op.old)
 	// Build argument list
 	args = append(args, arg{"sid", op.sid})
-	args, err := op.buildSetList(tableName, args, values)
+	args, err := op.buildSetList(op.destTable, args, op.values)
 	if err != nil {
 		return err
 	}
 
 	// Start building UPDATE query
-	query := fmt.Sprintf("UPDATE %s SET %s=$1", tableName, args[0].Attribute)
+	query := fmt.Sprintf("UPDATE %s SET %s=$1", op.destTable, args[0].Attribute)
 	queryParameters := make([]any, 0)
 	queryParameters = append(queryParameters, args[0].Value)
 	for i = 1; i < len(args); i++ {
@@ -163,46 +170,52 @@ func (op operation) updateClone(tableName string, relation PGRelation, values ma
 	queryParameters = append(queryParameters, op.sid)
 
 	// add primary key
-	query, queryParameters = op.buildWhere(tableName, relation, values, oldValues, old, query, queryParameters)
+	query, queryParameters = op.buildWhere(op.destTable, op.relation, op.values, op.oldValues, op.old, query, queryParameters)
 
 	// Run query
 	log.Debug("update", "query", query, "queryParameters", queryParameters)
-	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
+	_, err = tx.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
-		log.Error("can't update", "table", tableName, "query", query, "error", err)
+		log.Error("can't update", "table", op.destTable, "query", query, "error", err)
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "failure").Inc()
+		requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "failure").Observe(time.Since(t0).Seconds())
 		return fmt.Errorf("updateClone failed: error=%w", err)
 	}
 	// requestDuration.WithLabelValues(path, r.Method, code).Observe(float64(duration) / 1000)
 	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "success").Inc()
+	requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "success").Observe(time.Since(t0).Seconds())
 
 	return nil
 }
 
-func (op operation) deleteClone(tableName string, relation PGRelation, values map[string]any, old uint8) error {
+func (op operation) deleteClone(tx pgx.Tx) error {
 	var query string
-	log = op.log.With("op", "deleteClone", "table", tableName)
+	log = op.log.With("op", "deleteClone", "table", op.destTable)
 
-	log.Debug("Dump params", "relation", relation, "values", values, "old", old)
+	t0 := time.Now()
+	log.Debug("Dump params", "op", op)
 	// Build query
-	query = fmt.Sprintf("DELETE FROM %s WHERE sid=$1 ", tableName)
+	query = fmt.Sprintf("DELETE FROM %s WHERE sid=$1 ", op.destTable)
 	queryParameters := make([]any, 0)
 	queryParameters = append(queryParameters, op.sid)
 
-	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
+	query, queryParameters = op.buildWhere(op.destTable, op.relation, nil, op.values, op.old, query, queryParameters)
 	// Run query
 	log.Debug("delete", "query", query, "parameters", queryParameters)
-	rows, err := DestConnectionPool.Exec(context.Background(), query, queryParameters...)
+	rows, err := tx.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
-		log.Error("can't delete", "table", tableName, "query", query, "error", err)
+		requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Observe(time.Since(t0).Seconds())
+		log.Error("can't delete", "table", op.destTable, "query", query, "error", err)
 		return fmt.Errorf("deleteClone failed: error=%w", err)
 	}
 	if rows.RowsAffected() == 0 {
 		log.Error("did not find row to delete, destination database was not in sync", "query", query, "parameters", queryParameters)
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
+		requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Observe(time.Since(t0).Seconds())
 		return fmt.Errorf("deleteClone failed: no affected rows")
 	}
 	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Inc()
+	requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Observe(time.Since(t0).Seconds())
 	return nil
 }

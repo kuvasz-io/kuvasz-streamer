@@ -28,7 +28,7 @@ docker compose down
 docker compose up -d
 
 # Wait until all instances are ready
-for PORT in 6013 6014 6015 6016; do
+for PORT in 6012 6013 6014 6015 6016; do
     until pg_isready -h 127.0.0.1 -p ${PORT} -d postgres -U postgres;
         do sleep 1;
     done;

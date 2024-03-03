@@ -5,7 +5,7 @@ Library           Collections
 Library           String
 
 *** Variables ***
-${SLEEP}          0.8
+${SLEEP}          1.8
 @{PGVERSIONS}=    12    13    14    15    16
 
 *** Keywords ***

@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+killall kuvasz-streamer || true
+rm -f log/kuvasz-streamer.log
+# psql postgres://kuvasz:kuvasz@127.0.0.1:5432/postgres -c "select pg_drop_replication_slot('kuvasz_pgbench');" || true
+# psql postgres://kuvasz:kuvasz@127.0.0.1:5433/pgbench -f truncate.sql
+../../kuvasz-streamer --conf conf/kuvasz-streamer.toml  

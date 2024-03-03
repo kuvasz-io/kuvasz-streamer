@@ -1,0 +1,10 @@
+- database: pgbench
+  urls:
+  - url: postgres://kuvasz:kuvasz@127.0.0.1/pgbench?replication=database&application_name=kuvasz_pgbench&sslmode=disable
+    sid: pgbench
+  tables:
+    pgbench_accounts:
+      partitions_regex: pgbench_accounts
+    pgbench_branches:
+    pgbench_history:
+    pgbench_tellers:

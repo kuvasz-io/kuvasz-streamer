@@ -14,7 +14,14 @@ type (
 		log         *slog.Logger
 		database    string
 		sid         string
+		opCode      string
 		sourceTable string
+		destTable   string
+		id          int
+		relation    PGRelation
+		values      map[string]any
+		old         uint8
+		oldValues   map[string]any
 	}
 )
 
@@ -76,6 +83,7 @@ func processMessage(
 	relations PGRelations,
 	typeMap *pgtype.Map,
 	inStream *bool) {
+	var sourceTable *SourceTable
 	var destTable string
 	var logicalMsg pglogrepl.Message
 	var err error
@@ -144,19 +152,23 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err := MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
 		op.sourceTable = rel.RelationName
+		op.destTable = destTable
 		values := getValues(rel, m.Tuple.Columns, typeMap)
-		log.Debug(fmt.Sprintf("XLogData INSERT %s.%s: %v", rel.Namespace, rel.RelationName, values))
+		op.values = values
+		op.id = sourceTable.id
+		log.Debug("XLogData INSERT", "namespace", rel.Namespace, "relation", rel.RelationName, "values", values)
 		if sourceTable.Type == TableTypeHistory {
 			t0, _ := time.Parse("2006-01-02", "1900-01-01")
 			err = op.insertHistory(destTable, t0, values)
 		} else {
-			err = op.insertClone(destTable, values)
+			op.opCode = "ic"
+			SendWork(op)
 		}
 		if err != nil {
 			return
@@ -176,23 +188,26 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		_, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err := MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
-		oldValues := map[string]any{}
-		old := m.OldTupleType
-		if old != 0 {
-			oldValues = getValues(rel, m.OldTuple.Columns, typeMap)
+		op.old = m.OldTupleType
+		if op.old != 0 {
+			op.oldValues = getValues(rel, m.OldTuple.Columns, typeMap)
 		}
-		newValues := getValues(rel, m.NewTuple.Columns, typeMap)
-		log.Debug(fmt.Sprintf("XLogData UPDATE %s.%s: %v -> %v", rel.Namespace, rel.RelationName, oldValues, newValues))
+		op.values = getValues(rel, m.NewTuple.Columns, typeMap)
 		op.sourceTable = rel.RelationName
+		op.destTable = destTable
+		op.relation = relations[m.RelationID]
+		op.id = sourceTable.id
+		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
 		if sourceTables[rel.RelationName].Type == TableTypeHistory {
-			err = op.updateHistory(destTable, relations[m.RelationID], newValues, old, oldValues)
+			err = op.updateHistory(destTable, relations[m.RelationID], op.values, op.old, op.oldValues)
 		} else {
-			err = op.updateClone(destTable, relations[m.RelationID], newValues, old, oldValues)
+			op.opCode = "uc"
+			SendWork(op)
 		}
 		if err != nil {
 			return
@@ -221,13 +236,18 @@ func processMessage(
 			log.Debug("XLogDataV1 DELETE %s.%s ignored for append table type", rel.Namespace, rel.RelationName)
 			return
 		}
-		values := getValues(rel, m.OldTuple.Columns, typeMap)
-		log.Debug(fmt.Sprintf("XLogDataV1 DELETE %s.%s: %v, old: %c", rel.Namespace, rel.RelationName, values, m.OldTupleType))
+		op.values = getValues(rel, m.OldTuple.Columns, typeMap)
+		log.Debug("XLogDataV1 DELETE", "namespace", rel.Namespace, "relation", rel.RelationName, "values", op.values, "old", m.OldTupleType)
 		op.sourceTable = rel.RelationName
+		op.destTable = destTable
+		op.relation = relations[m.RelationID]
+		op.old = m.OldTupleType
+		op.id = sourceTable.id
 		if sourceTable.Type == TableTypeHistory {
-			err = op.deleteHistory(destTable, relations[m.RelationID], values, m.OldTupleType)
+			err = op.deleteHistory(destTable, relations[m.RelationID], op.values, m.OldTupleType)
 		} else {
-			err = op.deleteClone(destTable, relations[m.RelationID], values, m.OldTupleType)
+			op.opCode = "dc"
+			SendWork(op)
 		}
 		if err != nil {
 			return
