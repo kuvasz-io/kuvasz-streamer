@@ -31,7 +31,6 @@ sudo cat <<EOF > /etc/yum.repos.d/kuvasz.repo
 [kuvasz]
 name=Kuvasz.io
 baseurl=https://rpm.kuvasz.io
-repo_gpgcheck=1
 enabled=1
 gpgcheck=1
 gpgkey=https://rpm.kuvasz.io/gpg.key
