@@ -1,9 +1,21 @@
 ---
 layout: home
 ---
-# Kuvasz-Streamer
-
 Kuvasz-streamer is an open source change data capture (CDC) project that focuses exclusively on Postgres. It is tightly integrated with Postgres Logical Replication to provide high performance, low latency replication.
+
+## Features
+
+### Lightweight
+
+Kuvasz-streamer is a lightweight service written in Go that has no dependencies and no queuing. Run it as a system service or in a Docker container.
+
+### High-performance
+
+Kuvasz-streamer was benchmarked at 10K tps with less than 1 second latency. It uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later. It opens multiple connections to the destination database and batches updates into separate transactions.
+
+### Flexible
+
+Multiple table propagation models are supported: clone, history and append-only.
 
 ## Use cases
 
@@ -24,18 +36,3 @@ In a typical microservice architecture, history data is kept to a minimum in ord
 ### Postgres major version upgrade
 
 Upgrading major versions of Postgres is a time-consuming task that requires substantial downtime. Kuvasz-streamer can be used to synchronize databases between different versions of Postgres and performing a quick switchover.
-
-## Features
-
-### Lightweight
-
-Kuvasz-streamer is a lightweight service written in Go that has no dependencies.
-
-### High-performance
-
-Kuvasz-streamer uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later.
-
-### Flexible
-
-Multiple table propagation models are supported: clone, append and history (CDC).
-

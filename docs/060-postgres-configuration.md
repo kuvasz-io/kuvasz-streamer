@@ -2,6 +2,7 @@
 layout: page
 title: Postgres configuration
 permalink: /postgres-configuration/
+nav_order: 60
 ---
 # Postgres Configuration
 
