@@ -43,13 +43,12 @@ EOF
 
 ```bash
 dnf update
-dnf install kuvasz-streamer
+dnf install -y kuvasz-streamer
 ```
 
 ## Install manually
 
 1. Navigate to the [Releases Page](https://github.com/kuvasz-io/kuvasz-streamer/releases).
-
 1. Scroll down to the Assets section under the version that you want to install.
 1. Download the .tar,gz or .zip version needed.
 1. Unzip the package contents.
