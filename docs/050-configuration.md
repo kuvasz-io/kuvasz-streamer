@@ -2,6 +2,7 @@
 layout: page
 title: Configuration
 permalink: /configuration/
+nav_order: 50
 ---
 # Configuration
 

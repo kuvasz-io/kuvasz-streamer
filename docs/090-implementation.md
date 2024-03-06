@@ -2,6 +2,7 @@
 layout: page
 title: Implementation details
 permalink: /implementation/
+nav_order: 90
 ---
 # Implementation details
 

@@ -2,6 +2,7 @@
 layout: page
 title: Schema Modification
 permalink: /schema-modification/
+nav_order: 80
 ---
 # Schema Modification
 

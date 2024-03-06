@@ -2,6 +2,7 @@
 layout: page
 title: Streaming modes
 permalink: /streaming-modes/
+nav_order: 40
 ---
 
 # Streaming modes

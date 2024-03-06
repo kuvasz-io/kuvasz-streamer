@@ -2,6 +2,7 @@
 layout: page
 title: Maintenance
 permalink: /maintenance/
+nav_order: 70
 ---
 # Maintenance
 
