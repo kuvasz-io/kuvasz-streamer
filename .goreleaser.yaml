@@ -33,7 +33,8 @@ archives:
         format: zip
 
 nfpms:
-  - vendor: Kuvasz.io
+  - id: default
+    vendor: Kuvasz.io
     homepage: https://streamer.kuvasz.io/
     maintainer: Kuvasz <kuvasz@kuvasz.io>
     description: |-
@@ -55,6 +56,12 @@ nfpms:
     scripts:
       postinstall: package/postinstall.sh
       postremove: package/postremove.sh
+    rpm:
+      signature:
+        key_file: /home/github-runner/private.pgp
+    deb:
+      signature:
+        key_file: /home/github-runner/private.pgp
 
 changelog:
   disable: true

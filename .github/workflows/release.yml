@@ -20,4 +20,10 @@ jobs:
       run: goreleaser release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NFPM_DEFAULT_PASSPHRASE: ${{ secrets.NFPM_DEFAULT_PASSPHRASE }}
+    - name: Copy packages to repository
+      run: cp dist/*.rpm /var/www/caddy/rpm
+    - name: Generate repository
+      run: cd /var/www/caddy/rpm; createrepo -v .
+
 
