@@ -24,6 +24,6 @@ jobs:
     - name: Copy packages to repository
       run: cp dist/*.rpm /var/www/caddy/rpm
     - name: Generate repository
-      run: cd /var/www/caddy/rpm; createrepo -v .
+      run: cd /var/www/caddy/rpm; createrepo_c -v .
 
 
