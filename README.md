@@ -35,3 +35,11 @@ In a typical microservice architecture, history data is kept to a minimum in ord
 ### Postgres major version upgrade
 
 Upgrading major versions of Postgres is a time-consuming task that requires substantial downtime. Kuvasz-streamer can be used to synchronize databases between different versions of Postgres and performing a quick switchover.
+
+## Installation
+
+Check the [Installation Guide](https://streamer.kuvasz.io/installation/) in the documentation.
+
+## Getting started
+
+Detailed instructions are available in the [Getting started](https://streamer.kuvasz.io/getting-started/) section of the documentation
