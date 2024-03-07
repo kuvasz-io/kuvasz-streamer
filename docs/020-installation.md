@@ -11,8 +11,11 @@ nav_order: 20
 ### Install kuvasz.io APT repository if it is not installed
 
 ```bash
-sudo sh -c 'echo "deb https://apt.kuvasz.io stable main" > /etc/apt/sources.list.d/kuvasz.list'
-wget --quiet -O - https://apt.kuvasz.io/gpg.key | sudo apt-key add -
+sudo mkdir -m 0755 -p /etc/apt/keyrings/
+wget -O- https://apt.kuvasz.io/kuvasz.gpg | gpg --dearmor | sudo tee /etc/apt/keyrings/kuvasz.gpg > /dev/null 
+sudo chmod 644 /etc/apt/keyrings/kuvasz.gpg
+echo "deb [signed-by=/etc/apt/keyrings/kuvasz.gpg] https://apt.kuvasz.io stable main" | sudo tee /etc/apt/sources.list.d/kuvasz.list
+sudo chmod 644 /etc/apt/sources.list.d/kuvasz.list
 ```
 
 ### Install `kuvasz-streamer`

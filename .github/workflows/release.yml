@@ -23,7 +23,13 @@ jobs:
         NFPM_DEFAULT_PASSPHRASE: ${{ secrets.NFPM_DEFAULT_PASSPHRASE }}
     - name: Copy packages to repository
       run: cp dist/*.rpm /var/www/caddy/rpm
-    - name: Generate repository
+    - name: Generate RPM repository
       run: cd /var/www/caddy/rpm; createrepo_c -v .
-
+    - name: Generate APT repository
+      run: aptly repo add kuvasz dist/*.deb
+    - name: Take APT repository snapshot
+      run: "aptly snapshot create kuvasz-${GITHUB_REF_NAME} from repo kuvasz"
+    - name: Publish APT repository
+      run: "aptly publish snapshot kuvasz-${GITHUB_REF_NAME} filesystem:caddy:""
+      
 
