@@ -25,11 +25,9 @@ jobs:
       run: cp dist/*.rpm /var/www/caddy/rpm
     - name: Generate RPM repository
       run: cd /var/www/caddy/rpm; createrepo_c -v .
-    - name: Generate APT repository
+    - name: Add new packages to APT repo
       run: aptly repo add kuvasz dist/*.deb
-    - name: Take APT repository snapshot
-      run: "aptly snapshot create kuvasz-${GITHUB_REF_NAME} from repo kuvasz"
     - name: Publish APT repository
-      run: "aptly publish snapshot kuvasz-${GITHUB_REF_NAME} filesystem:caddy:"
+      run: "aptly publish update stable filesystem:caddy:"
       
 
