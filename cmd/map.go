@@ -31,6 +31,10 @@ type (
 )
 
 func ReadMapDatabase(db *sql.DB) {
+	var dbID int64
+	var dbName string
+	log := log.With("database", config.App.MapFile)
+	log.Info("Reading map database")
 	row, err := db.Query("SELECT name FROM db order by db_id;")
 	if err != nil {
 		log.Error("Can't read database", "error", err)
@@ -38,9 +42,8 @@ func ReadMapDatabase(db *sql.DB) {
 	}
 	defer row.Close()
 	for row.Next() {
-		db := SourceDatabase{}
-		// Iterate and fetch the records from result cursor
-		row.Scan(&db.Name)
+		row.Scan(&dbID, &dbName)
+		_, _ = db.Query("SELECT url, sid FROM url WHERE db_id=?;", dbID)
 	}
 
 }

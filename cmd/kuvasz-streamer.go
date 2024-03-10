@@ -27,7 +27,6 @@ var (
 	Build              string
 	DestConnectionPool *pgxpool.Pool
 	err                error
-	mapdb              *sql.DB
 	dbmap              DBMap
 	destTables         PGTables
 )
