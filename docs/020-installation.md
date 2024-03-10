@@ -63,14 +63,14 @@ dnf install -y kuvasz-streamer
 Building from source assumes you are on Ubuntu 22.04 LTS
 
 ### Install dependencies
-Minimal requirements are `Make`, `git` and `postgresql`.
+Minimal requirements are `Make` and `git`, but you will also need PostgreSQL client for testing.
 
 ```bash
 sudo apt install build-essential git postgresql postgresql-contrib
 ```
 ### Install Go and tools
 
-`kuvasz-streamer` requires Go 1.22 or higher. Install Go and GoReleaser using snaps, then install `staticcheck` from source and `golangci-lint` binary from its repository. Finally add the local Go bin directory to the PATH.
+`kuvasz-streamer` requires Go 1.22 or higher. Install Go and GoReleaser using snaps, then install `staticcheck` from source and `golangci-lint` binary from its repository. Finally, add the local Go bin directory to the PATH.
 
 ```bash
 sudo snap install go --channel=1.22/stable --classic
@@ -82,10 +82,10 @@ export PATH=${PATH}:$(go env GOPATH)/bin
 
 ### Clone repository
 
-Clone repo from Github
+Clone repo from GitHub
 
 ```bash
-git clone git@github.com:kuvasz-io/kuvasz-streamer.git
+git clone https://github.com/kuvasz-io/kuvasz-streamer.git
 cd kuvasz-streamer
 ```
 
@@ -108,11 +108,47 @@ make check
 Build packages
 
 This will build RPMs, DEBs and tarballs for all supported architectures.
-Create a gpg key for signing the packages then export it to a file before running the `goreleaser` command.
+Create a GPG key for signing the packages then export it to a file before running the `goreleaser` command.
 
 ```bash
 gpg --generate-key
 gpg --output ${HOME}/private.pgp --armor --export-secret-key <email address used to create key>
 export NFPM_DEFAULT_PASSPHRASE=<passphrase>
 make release
+```
+
+## Run test suite
+
+The test suite relies on Docker to set up instances of all supported version of PostgreSQL 
+and on Robot Framework to run end-to-end tests for all the supported features.
+
+### Install Docker
+
+First, install Docker following the instructions [here](https://docs.docker.com/engine/install/).
+Then start it with
+
+```bash
+sudo systemctl enable --now docker
+```
+
+### Install pip
+
+Install the `pip` package manager and Postgres driver
+
+```bash
+sudo apt install python3-pip
+```
+
+### Install Robot Framework
+
+Then use `pip` to install Robot Framework and its dependencies
+
+```bash
+pip3 install psycopg2-binary robotframework robotframework-databaselibrary
+```
+
+### Run the test suit
+
+```bash
+make test
 ```

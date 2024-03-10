@@ -6,7 +6,7 @@ nav_order: 30
 ---
 # Getting started
 
-This guide runs a source and destination instance in Docker and `kuvasz-streamer` as a system service. It assumes running udner Ubuntu 22.04 LTS
+This guide runs a source and destination instance in Docker and `kuvasz-streamer` as a system service. It assumes running under Ubuntu 22.04 LTS
 
 ## Make sure Docker and Postgres are installed on the host
 

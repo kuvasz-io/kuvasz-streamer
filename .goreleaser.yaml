@@ -21,9 +21,6 @@ builds:
     goarch:
       - amd64
       - arm64
-      - riscv64
-      - mips64
-      - arm
 
     main: ./cmd/
 
