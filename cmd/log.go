@@ -8,11 +8,16 @@ import (
 	"strings"
 )
 
-type LogsConfig struct {
-	Level  string `koanf:"level"`
-	Source bool   `koanf:"source"`
-	Format string `koanf:"format"`
-}
+type (
+	LogsConfig struct {
+		Level  string `koanf:"level"`
+		Source bool   `koanf:"source"`
+		Format string `koanf:"format"`
+	}
+	Logger struct {
+		slogLogger *slog.Logger
+	}
+)
 
 var (
 	log               *slog.Logger
@@ -23,6 +28,18 @@ var (
 		Format: "text",
 	}
 )
+
+func GetLogger(l *slog.Logger) *Logger {
+	return &Logger{slogLogger: l}
+}
+
+func (l *Logger) Fatalf(format string, v ...any) {
+	l.slogLogger.Debug(fmt.Sprintf(format, v...))
+	os.Exit(1)
+}
+func (l *Logger) Printf(format string, v ...any) {
+	l.slogLogger.Debug(fmt.Sprintf(format, v...))
+}
 
 func parseLevel(level string) (slog.Level, error) {
 	l := strings.ToLower(level)

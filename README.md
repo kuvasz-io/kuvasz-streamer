@@ -30,7 +30,7 @@ In a sensitive multi-tenant environment, each tenant may be assigned a separate 
 
 ### Database performance optimization
 
-In a typical microservice architecture, history data is kept to a minimum in order to provide quick query time and low latency to end users. However, historical data is important for AI/ML and reporting. `kuvasz-streamer` implements a no-delete strategy to some tables that dows not propagate `DELETE` operations. Example usage includes transaction tables and audit history tables.
+In a typical microservice architecture, history data is kept to a minimum in order to provide quick query time and low latency to end users. However, historical data is important for AI/ML and reporting. `kuvasz-streamer` implements a no-delete strategy to some tables that does not propagate `DELETE` operations. Example usage includes transaction tables and audit history tables.
 
 ### Postgres major version upgrade
 

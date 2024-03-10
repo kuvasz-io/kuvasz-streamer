@@ -1,10 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 	"regexp"
 
+	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v2"
 )
 
@@ -27,6 +29,21 @@ type (
 		id              int
 	}
 )
+
+func ReadMapDatabase(db *sql.DB) {
+	row, err := db.Query("SELECT name FROM db order by db_id;")
+	if err != nil {
+		log.Error("Can't read database", "error", err)
+		os.Exit(1)
+	}
+	defer row.Close()
+	for row.Next() {
+		db := SourceDatabase{}
+		// Iterate and fetch the records from result cursor
+		row.Scan(&db.Name)
+	}
+
+}
 
 func ReadMapFile(filename string) {
 	// Read map
@@ -79,7 +96,6 @@ func FindSourceTable(relationName string, sourceTables map[string]SourceTable) s
 		}
 	}
 	return ""
-
 }
 
 func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (*SourceTable, string, error) {

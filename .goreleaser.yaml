@@ -17,6 +17,14 @@ builds:
       - linux
       - windows
       - darwin
+      - freebsd
+    goarch:
+      - amd64
+      - arm64
+      - riscv64
+      - mips64
+      - arm
+
     main: ./cmd/
 
 archives:
@@ -58,10 +66,10 @@ nfpms:
       postremove: package/postremove.sh
     rpm:
       signature:
-        key_file: /home/github-runner/private.pgp
+        key_file: "{{ .Env.HOME }}/private.pgp"
     deb:
       signature:
-        key_file: /home/github-runner/private.pgp
+        key_file: "{{ .Env.HOME }}/private.pgp"
 
 changelog:
   disable: true

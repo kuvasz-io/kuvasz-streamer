@@ -6,7 +6,7 @@ nav_order: 30
 ---
 # Getting started
 
-This guide runs a source and destination instance in Docker and `kuvasz-streamer` as a system service. It assumes running udner Ubunti 22.04 LTS
+This guide runs a source and destination instance in Docker and `kuvasz-streamer` as a system service. It assumes running udner Ubuntu 22.04 LTS
 
 ## Make sure Docker and Postgres are installed on the host
 
@@ -23,7 +23,7 @@ sudo docker pull postgres:15
 sudo docker run -i -t --name source -p 6015:5432 -e POSTGRES_PASSWORD=postgres postgres:15 -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0
 psql postgres://postgres:postgres@127.0.0.1:6015/postgres -c "create database source"
 psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create table employee(id serial, name text, dob date, salary numeric)"
-psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create publication kuvasz_source on all tables"
+psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create publication kuvasz_source for all tables"
 ```
 
 ## Start destination database on port 6016 and create destination schema

@@ -21,6 +21,9 @@ check:
 build:
 	go build -o ${BINARY} -ldflags="${LDFLAGS}" ./cmd/*.go
 
+release:
+	goreleaser release --clean --snapshot
+
 test:
 	cd test; ./run
 
