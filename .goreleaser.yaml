@@ -68,5 +68,9 @@ nfpms:
       signature:
         key_file: "{{ .Env.HOME }}/private.pgp"
 
+dockers:
+  - image_templates:
+      - user/repo
+      
 changelog:
   disable: true
