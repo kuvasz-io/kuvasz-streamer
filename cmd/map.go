@@ -42,7 +42,7 @@ func ReadMapDatabase(db *sql.DB) {
 	}
 	defer row.Close()
 	for row.Next() {
-		row.Scan(&dbID, &dbName)
+		_ = row.Scan(&dbID, &dbName)
 		_, _ = db.Query("SELECT url, sid FROM url WHERE db_id=?;", dbID)
 	}
 
