@@ -30,8 +30,8 @@ rpmrepo:
 
 aptrepo:
 	aptly repo add kuvasz dist/*.deb
-	aptly publish update --passphrase=${GPG_PASSPHRASE} stable filesystem:caddy:
-	
+	aptly publish update --passphrase="${GPG_PASSPHRASE}" --batch=true stable filesystem:caddy:
+
 test:
 	cd test; ./run
 
