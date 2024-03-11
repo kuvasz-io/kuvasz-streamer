@@ -28,15 +28,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NFPM_DEFAULT_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-    - name: Copy packages to repository
-      run: cp dist/*.rpm /var/www/caddy/rpm
-    - name: Generate RPM repository
-      run: cd /var/www/caddy/rpm; createrepo_c -v .
-    - name: Add new packages to APT repo
-      run: aptly repo add kuvasz dist/*.deb
-    - name: Publish APT repository
+    - name: Update RPM repository
+      run: make rpmrepo
+    - name: Update APT repository
       env:
         GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
-      run: "aptly publish update --passphrase=${GPG_PASSPHRASE} stable filesystem:caddy:"
+      run: make aptrepo
       
 
