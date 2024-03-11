@@ -8,7 +8,6 @@ import (
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // suppress linter error
 	"os"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/mattn/go-sqlite3"
@@ -65,22 +64,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	if strings.HasPrefix(config.App.MapFile, "sqlite") {
-		mapdb, err := sql.Open("sqlite3", config.App.MapFile)
+	if config.App.MapDatabase != "" {
+		db, err := sql.Open("sqlite3", config.App.MapDatabase)
 		if err != nil {
 			log.Error("Can't open map database", "database", config.App.MapFile, "error", err)
 			os.Exit(1)
 		}
-		Migrate(embedMigrations, "migrations", mapdb)
-		ReadMapDatabase(mapdb)
-		mapdb.Close()
+		Migrate(embedMigrations, "migrations", db)
+		ReadMapDatabase(db)
+		db.Close()
 	} else {
 		ReadMapFile(config.App.MapFile)
 	}
-	// Start destintion processing worker routines
+	CompileRegexes()
+
+	// Start destination processing worker routines
 	StartWorkers(config.App.NumWorkers)
 
-	// Loop throught config and replicate databases
+	// Loop through config and replicate databases
 	log.Info("Start processing source databases")
 	for _, database := range dbmap {
 		for _, url := range database.Urls {

@@ -35,6 +35,7 @@ type (
 
 	AppConfig struct {
 		MapFile     string  `koanf:"map_file"`
+		MapDatabase string  `koanf:"map_database"`
 		NumWorkers  int     `koanf:"num_workers"`
 		CommitDelay float64 `koanf:"commit_delay"`
 	}
@@ -68,7 +69,8 @@ var config = Config{
 		URL: "",
 	},
 	App: AppConfig{
-		MapFile:     "map.yaml",
+		MapFile:     "/etc/kuvasz/map.yaml",
+		MapDatabase: "",
 		NumWorkers:  2,
 		CommitDelay: 1.0,
 	},

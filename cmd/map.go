@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"regexp"
@@ -13,39 +14,65 @@ import (
 type (
 	DBMap          []SourceDatabase
 	SourceDatabase struct {
-		Name   string                 `yaml:"database"`
-		Urls   []SourceURL            `yaml:"urls"`
-		Tables map[string]SourceTable `yaml:"tables"`
+		Name   string                 `yaml:"database" json:"database"`
+		Urls   []SourceURL            `yaml:"urls"     json:"urls"`
+		Tables map[string]SourceTable `yaml:"tables"   json:"tables"`
 	}
 	SourceURL struct {
-		URL string `yaml:"url"`
-		SID string `yaml:"sid"`
+		URL string `yaml:"url" json:"url"`
+		SID string `yaml:"sid" json:"sid"`
 	}
 	SourceTable struct {
-		Type            string `yaml:"type,omitempty"`
-		Target          string `yaml:"target,omitempty"`
-		PartitionsRegex string `yaml:"partitions_regex,omitempty"`
+		Type            string `yaml:"type,omitempty"             json:"type"`
+		Target          string `yaml:"target,omitempty"           json:"target"`
+		PartitionsRegex string `yaml:"partitions_regex,omitempty" json:"partitions_regex"`
 		compiledRegex   *regexp.Regexp
 		id              int
 	}
 )
 
 func ReadMapDatabase(db *sql.DB) {
-	var dbID int64
-	var dbName string
+	var jsonData string
 	log := log.With("database", config.App.MapFile)
 	log.Info("Reading map database")
-	row, err := db.Query("SELECT name FROM db order by db_id;")
+	err := db.QueryRow(`SELECT json_group_array(
+		json_object(
+		  'database', d.name,
+		  'urls', (
+			SELECT json_group_array(
+			  json_object(
+				'url', u.url,
+				'sid', u.sid
+			  )
+			)
+			FROM url u
+			WHERE u.db_id = d.db_id
+		  ),
+		  'tables', (
+			SELECT json_group_object(
+				t.name,
+			  json_object(
+				'type', t.type,
+				'target', t.target,
+				'partitions_regex', t.partitions_regex
+			  )
+			)
+			FROM tbl t
+			WHERE t.db_id = d.db_id
+		  )
+		)
+	  )
+	  FROM db d;`).Scan(&jsonData)
 	if err != nil {
 		log.Error("Can't read database", "error", err)
 		os.Exit(1)
 	}
-	defer row.Close()
-	for row.Next() {
-		_ = row.Scan(&dbID, &dbName)
-		_, _ = db.Query("SELECT url, sid FROM url WHERE db_id=?;", dbID)
+	err = json.Unmarshal([]byte(jsonData), &dbmap)
+	if err != nil {
+		log.Error("Can't unmarshal database", "error", err)
+		os.Exit(1)
 	}
-
+	log.Info("Read map database", "map", dbmap)
 }
 
 func ReadMapFile(filename string) {
@@ -64,6 +91,9 @@ func ReadMapFile(filename string) {
 		os.Exit(1)
 	}
 	log.Info("Read map file", "map", dbmap)
+}
+
+func CompileRegexes() {
 	log.Debug("Compiling partition regexes and assigning ids")
 	i := 0
 	for _, db := range dbmap {

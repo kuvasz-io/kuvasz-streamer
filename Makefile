@@ -40,18 +40,8 @@ docs:
 	rm -rf /var/www/caddy/streamer/*
 	cp -r docs/_site/* /var/www/caddy/streamer
 
-docker:
-	@echo ${BRANCHNAME}
-	@echo ${VERSION}
-	docker build -t ${CONTAINER} .
-	docker tag ${CONTAINER} ${CONTAINER-CI}
-	docker tag ${CONTAINER} ${CONTAINER-LATEST}
-	docker push ${CONTAINER-CI}
-	docker push ${CONTAINER}
-	docker push ${CONTAINER-LATEST}
-
 clean:
 	rm -f ${BINARY}
 
-.PHONY: check build test docs package install clean
+.PHONY: check build release rpmrepo aptrepo test docs clean
 
