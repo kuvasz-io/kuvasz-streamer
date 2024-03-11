@@ -35,7 +35,8 @@ jobs:
     - name: Add new packages to APT repo
       run: aptly repo add kuvasz dist/*.deb
     - name: Publish APT repository
-      env: GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       run: "aptly publish update --passphrase=${GPG_PASSPHRASE} stable filesystem:caddy:"
       
 
