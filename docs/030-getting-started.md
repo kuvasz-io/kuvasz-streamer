@@ -20,7 +20,12 @@ Run the following in a first window
 
 ```bash
 sudo docker pull postgres:15
-sudo docker run -i -t --rm --name source -p 6015:5432 -e POSTGRES_PASSWORD=postgres postgres:15 -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0
+sudo docker run -i -t --rm --name source \
+  -p 6015:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  postgres:15 -c wal_level=logical \
+  -c log_connections=on \
+  -c log_min_duration_statement=0
 ```
 
 ## Start destination database on port 6016 and create destination schema
@@ -29,7 +34,12 @@ Run this in a second window
 
 ```bash
 sudo docker pull postgres:16
-sudo docker run -i -t --rm --name dest -p 6016:5432 -e POSTGRES_PASSWORD=postgres postgres:16 -c log_connections=on -c log_min_duration_statement=0
+sudo docker run -i -t --rm --name dest \
+  -p 6016:5432 \
+  -e POSTGRES_PASSWORD=postgres \
+  postgres:16 \
+  -c log_connections=on \
+  -c log_min_duration_statement=0
 ```
 
 ## Configure streamer
@@ -73,7 +83,12 @@ EOF
 Start the streamer as a container
 
 ```bash
-sudo docker run -i -t --rm --name kuvasz-streamer --link source --link dest -v ./kuvasz-streamer.toml:/etc/kuvasz/kuvasz-streamer.toml -v ./map.yaml:/etc/kuvasz/map.yaml ghcr.io/kuvasz-io/kuvasz-streamer /kuvasz-streamer
+sudo docker run -i -t --rm --name kuvasz-streamer \
+  --link source \
+  --link dest \
+  -v ./kuvasz-streamer.toml:/etc/kuvasz/kuvasz-streamer.toml \
+  -v ./map.yaml:/etc/kuvasz/map.yaml ghcr.io/kuvasz-io/kuvasz-streamer \
+  /kuvasz-streamer
 ```
 
 ## Test
@@ -81,11 +96,13 @@ sudo docker run -i -t --rm --name kuvasz-streamer --link source --link dest -v .
 In a fourth window, insert a record in the source database
 
 ```bash
-psql postgres://postgres:postgres@127.0.0.1:6015/source -c "insert into employee(name, dob, salary) values('tata', '1970-01-02', 2000)"
+psql postgres://postgres:postgres@127.0.0.1:6015/source \
+  -c "insert into employee(name, dob, salary) values('tata', '1970-01-02', 2000)"
 ```
 
 Now check it has been replicated to the destination database
 
 ```bash
-psql postgres://postgres:postgres@127.0.0.1:6016/dest -c "select * from emp"
+psql postgres://postgres:postgres@127.0.0.1:6016/dest \
+  -c "select * from emp"
 ```
