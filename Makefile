@@ -24,6 +24,14 @@ build:
 release:
 	goreleaser release --clean --snapshot
 
+rpmrepo:
+	cp dist/*.rpm /var/www/caddy/rpm
+	/var/www/caddy/rpm; createrepo_c -v /var/www/caddy/rpm
+
+aptrepo:
+	aptly repo add kuvasz dist/*.deb
+	aptly publish update --passphrase=${GPG_PASSPHRASE} stable filesystem:caddy:
+	
 test:
 	cd test; ./run
 
