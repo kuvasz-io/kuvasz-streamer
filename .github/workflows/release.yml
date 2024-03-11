@@ -27,7 +27,7 @@ jobs:
       run: goreleaser release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NFPM_DEFAULT_PASSPHRASE: ${{ secrets.NFPM_DEFAULT_PASSPHRASE }}
+        NFPM_DEFAULT_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
     - name: Copy packages to repository
       run: cp dist/*.rpm /var/www/caddy/rpm
     - name: Generate RPM repository
@@ -35,6 +35,7 @@ jobs:
     - name: Add new packages to APT repo
       run: aptly repo add kuvasz dist/*.deb
     - name: Publish APT repository
-      run: "aptly publish update stable filesystem:caddy:"
+      env: GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: "aptly publish update --passphrase=${GPG_PASSPHRASE} stable filesystem:caddy:"
       
 
