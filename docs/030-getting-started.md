@@ -20,10 +20,7 @@ Run the following in a first window
 
 ```bash
 sudo docker pull postgres:15
-sudo docker run -i -t --name source -p 6015:5432 -e POSTGRES_PASSWORD=postgres postgres:15 -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0
-psql postgres://postgres:postgres@127.0.0.1:6015/postgres -c "create database source"
-psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create table employee(id serial, name text, dob date, salary numeric)"
-psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create publication kuvasz_source for all tables"
+sudo docker run -i -t --rm --name source -p 6015:5432 -e POSTGRES_PASSWORD=postgres postgres:15 -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0
 ```
 
 ## Start destination database on port 6016 and create destination schema
@@ -32,21 +29,29 @@ Run this in a second window
 
 ```bash
 sudo docker pull postgres:16
-sudo docker run -i -t --name dest -p 6016:5432 -e POSTGRES_PASSWORD=postgres postgres:16 -c log_connections=on -c log_min_duration_statement=0
-psql postgres://postgres:postgres@127.0.0.1:6016/postgres -c "create database dest"
-psql postgres://postgres:postgres@127.0.0.1:6016/dest -c "create table emp(sid text, id int, name text, dob date)"
+sudo docker run -i -t --rm --name dest -p 6016:5432 -e POSTGRES_PASSWORD=postgres postgres:16 -c log_connections=on -c log_min_duration_statement=0
 ```
 
 ## Configure streamer
 
-In a third window, create streamer config file with minimal configuration
+In a third window, prepare the schemas in source and destination databases.
+
+```bash
+psql postgres://postgres:postgres@127.0.0.1:6015/postgres -c "create database source"
+psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create table employee(id serial, name text, dob date, salary numeric)"
+psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create publication kuvasz_source for all tables"
+psql postgres://postgres:postgres@127.0.0.1:6016/postgres -c "create database dest"
+psql postgres://postgres:postgres@127.0.0.1:6016/dest -c "create table emp(sid text, id int, name text, dob date)"
+```
+
+Then create streamer config file with minimal configuration
 
 ```bash
 cat <<EOF > kuvasz-streamer.toml
 [database]
-url = "postgres://postgres:postgres@127.0.0.1:6016/dest?application_name=kuvasz-streamer"
+url = "postgres://postgres:postgres@dest/dest?application_name=kuvasz-streamer"
 [app]
-map_file = "./map.yaml"
+map_file = "/etc/kuvasz/map.yaml"
 EOF
 ```
 
@@ -56,7 +61,7 @@ Create map file
 cat <<EOF > map.yaml
 - database: source
   urls:
-  - url: postgres://postgres:postgres@127.0.0.1:6015/source?replication=database&application_name=repl_source
+  - url: postgres://postgres:postgres@source/source?replication=database&application_name=repl_source
     sid: source
   tables:
     employee:
@@ -65,10 +70,10 @@ cat <<EOF > map.yaml
 EOF
 ```
 
-Start the streamer
+Start the streamer as a container
 
 ```bash
-kuvasz-streamer --conf ./kuvasz-streamer.toml
+sudo docker run -i -t --rm --name kuvasz-streamer --link source --link dest -v ./kuvasz-streamer.toml:/etc/kuvasz/kuvasz-streamer.toml -v ./map.yaml:/etc/kuvasz/map.yaml ghcr.io/kuvasz-io/kuvasz-streamer /kuvasz-streamer
 ```
 
 ## Test
@@ -82,5 +87,5 @@ psql postgres://postgres:postgres@127.0.0.1:6015/source -c "insert into employee
 Now check it has been replicated to the destination database
 
 ```bash
-psql postgres://postgres:postgres@127.0.0.1:6016/source -c "select * from emp"
+psql postgres://postgres:postgres@127.0.0.1:6016/dest -c "select * from emp"
 ```
