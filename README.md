@@ -36,6 +36,10 @@ In a typical microservice architecture, history data is kept to a minimum in ord
 
 Upgrading major versions of Postgres is a time-consuming task that requires substantial downtime. Kuvasz-streamer can be used to synchronize databases between different versions of Postgres and performing a quick switchover.
 
+## Documentation
+
+The documentation is available at https://streamer.kuvasz.io/
+
 ## Installation
 
 Check the [Installation Guide](https://streamer.kuvasz.io/installation/) in the documentation.
@@ -43,3 +47,11 @@ Check the [Installation Guide](https://streamer.kuvasz.io/installation/) in the 
 ## Getting started
 
 Detailed instructions are available in the [Getting started](https://streamer.kuvasz.io/getting-started/) section of the documentation
+
+## Discuss
+
+All ideas and discussions are welcome. We use the [GitHub Discussions](https://github.com/kuvasz-io/kuvasz-streamer/discussions) for that.
+
+## Contributing
+
+Please contribute to the project by opening a Pull Request.
