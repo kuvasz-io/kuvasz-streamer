@@ -8,3 +8,5 @@ test/*.xml
 test/*.log
 test/*.html
 dist/
+go.work
+go.work.sum
