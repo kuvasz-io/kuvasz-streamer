@@ -7,7 +7,7 @@ import (
 )
 
 type URL struct {
-	Id   int64  `json:"id"`
+	ID   int64  `json:"id"`
 	DBId int64  `json:"db_id"`
 	SID  string `json:"sid"`
 	URL  string `json:"url"`
@@ -24,7 +24,7 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item URL
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
@@ -33,7 +33,7 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = ConfigDB.QueryRow(
 		`SELECT url_id, db_id, sid, url FROM url WHERE url_id = ?`,
-		id).Scan(&item.Id, &item.DBId, &item.SID, &item.URL)
+		id).Scan(&item.ID, &item.DBId, &item.SID, &item.URL)
 	if err != nil {
 		log.Error("Cannot read url", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
@@ -59,7 +59,7 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	for rows.Next() {
 		var item URL
-		err := rows.Scan(&item.Id, &item.DBId, &item.SID, &item.URL)
+		err := rows.Scan(&item.ID, &item.DBId, &item.SID, &item.URL)
 		if err != nil {
 			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
@@ -90,7 +90,7 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	// err = app.Validate.Struct(item)
 
 	err = ConfigDB.QueryRow(
-		`INSERT INTO url(db_id, sid, url) VALUES (?, ?, ?) RETURNING url_id`, item.DBId, item.SID, item.URL).Scan(&item.Id)
+		`INSERT INTO url(db_id, sid, url) VALUES (?, ?, ?) RETURNING url_id`, item.DBId, item.SID, item.URL).Scan(&item.ID)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
@@ -101,7 +101,7 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 func urlDeleteOneHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
@@ -126,7 +126,7 @@ func urlPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item URL
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)

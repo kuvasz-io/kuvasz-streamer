@@ -7,7 +7,7 @@ import (
 )
 
 type tbl struct {
-	Id              int64   `json:"id"`
+	ID              int64   `json:"id"`
 	DBId            int64   `json:"db_id"`
 	Name            string  `json:"name"`
 	Type            string  `json:"type"`
@@ -28,7 +28,7 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item tbl
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
@@ -37,7 +37,7 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = ConfigDB.QueryRow(
 		`SELECT tbl_id, db_id, name, type, target, partitions_regex FROM tbl WHERE tbl_id = ?`,
-		id).Scan(&item.Id, &item.DBId, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+		id).Scan(&item.ID, &item.DBId, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 	if err != nil {
 		log.Error("Cannot read tbl", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
@@ -63,7 +63,7 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	for rows.Next() {
 		var item tbl
-		err := rows.Scan(&item.Id, &item.DBId, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+		err := rows.Scan(&item.ID, &item.DBId, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 		if err != nil {
 			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
@@ -95,7 +95,7 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	err = ConfigDB.QueryRow(
 		`INSERT INTO tbl(db_id, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?) RETURNING tbl_id`,
-		item.DBId, item.Name, item.Type, item.Target, item.PartitionsRegex).Scan(&item.Id)
+		item.DBId, item.Name, item.Type, item.Target, item.PartitionsRegex).Scan(&item.ID)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
@@ -106,7 +106,7 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 func tblDeleteOneHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
@@ -131,7 +131,7 @@ func tblPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item tbl
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)

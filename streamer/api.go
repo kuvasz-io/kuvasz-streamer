@@ -45,13 +45,6 @@ var (
 	}
 )
 
-func handleError(err error, msg string) {
-	if err != nil {
-		log.Error(msg, err)
-		os.Exit(1)
-	}
-}
-
 func (r *requestRecord) Write(p []byte) (int, error) {
 	written, err := r.ResponseWriter.Write(p)
 	r.responseBytes += int64(written)
@@ -81,10 +74,10 @@ func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
-func ExtractId(r *http.Request) (int64, error) {
+func ExtractID(r *http.Request) (int64, error) {
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		return 0, fmt.Errorf("Missing ID")
+		return 0, fmt.Errorf("missing id")
 	}
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
@@ -262,6 +255,7 @@ func StartAPI(log *slog.Logger) {
 	router.HandleFunc("/api/url", urlGetManyHandler).Methods("GET")
 	router.HandleFunc("/api/url", urlPostOneHandler).Methods("POST")
 	router.HandleFunc("/api/url/{id}", urlDeleteOneHandler).Methods("DELETE")
+	router.HandleFunc("/api/url/{id}", urlPutOneHandler).Methods("PUT")
 
 	router.HandleFunc("/api/tbl/{id}", tblGetOneHandler).Methods("GET")
 	router.HandleFunc("/api/tbl", tblGetManyHandler).Methods("GET")

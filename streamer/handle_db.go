@@ -7,7 +7,7 @@ import (
 )
 
 type db struct {
-	Id   int64  `json:"id"`
+	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -21,14 +21,14 @@ func dbGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item db
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
 		return
 	}
 
-	err = ConfigDB.QueryRow(`SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.Id, &item.Name)
+	err = ConfigDB.QueryRow(`SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.ID, &item.Name)
 	if err != nil {
 		log.Error("Cannot read database schema", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read database schema list", err)
@@ -54,7 +54,7 @@ func dbGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	for rows.Next() {
 		var item db
-		err := rows.Scan(&item.Id, &item.Name)
+		err := rows.Scan(&item.ID, &item.Name)
 		if err != nil {
 			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
@@ -85,7 +85,7 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	// err = app.Validate.Struct(item)
 
 	err = ConfigDB.QueryRow(
-		`INSERT INTO db(name) VALUES (?) RETURNING db_id`, item.Name).Scan(&item.Id)
+		`INSERT INTO db(name) VALUES (?) RETURNING db_id`, item.Name).Scan(&item.ID)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
@@ -96,7 +96,7 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 func dbDeleteOneHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
@@ -121,7 +121,7 @@ func dbPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item db
 	req := PrepareReq(w, r)
 
-	id, err := ExtractId(r)
+	id, err := ExtractID(r)
 	if err != nil {
 		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
