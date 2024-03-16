@@ -33,7 +33,7 @@ type (
 
 func ReadMapDatabase(db *sql.DB) {
 	var jsonData string
-	log := log.With("database", config.App.MapFile)
+	log := log.With("database", config.App.MapDatabase)
 	log.Info("Reading map database")
 	err := db.QueryRow(`SELECT json_group_array(
 		json_object(

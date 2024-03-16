@@ -28,6 +28,7 @@ var (
 	err                error
 	dbmap              DBMap
 	destTables         PGTables
+	ConfigDB           *sql.DB
 
 	//go:embed migrations/*.sql
 	embedMigrations embed.FS
@@ -68,14 +69,13 @@ func main() {
 	}
 
 	if config.App.MapDatabase != "" {
-		db, err := sql.Open("sqlite3", config.App.MapDatabase)
+		ConfigDB, err = sql.Open("sqlite3", config.App.MapDatabase)
 		if err != nil {
 			log.Error("Can't open map database", "database", config.App.MapFile, "error", err)
 			os.Exit(1)
 		}
-		Migrate(embedMigrations, "migrations", db)
-		ReadMapDatabase(db)
-		db.Close()
+		Migrate(embedMigrations, "migrations", ConfigDB)
+		ReadMapDatabase(ConfigDB)
 	} else {
 		ReadMapFile(config.App.MapFile)
 	}

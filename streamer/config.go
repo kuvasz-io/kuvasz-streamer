@@ -40,12 +40,19 @@ type (
 		CommitDelay float64 `koanf:"commit_delay"`
 	}
 
+	CORSConfig struct {
+		AllowedOrigins []string `koanf:"allowed_origins"`
+		AllowMethods   string   `koanf:"allow_methods"`
+		AllowHeaders   string   `koanf:"allow_headers"`
+		MaxAge         int      `koanf:"max_age"`
+	}
 	Config struct {
 		Server      ServerConfig      `koanf:"server"`
 		Maintenance MaintenanceConfig `koanf:"maintenance"`
 		Logs        LogsConfig        `koanf:"logs"`
 		Database    DatabaseConfig    `koanf:"database"`
 		App         AppConfig         `koanf:"app"`
+		Cors        CORSConfig        `koanf:"cors"`
 	}
 )
 
@@ -73,6 +80,12 @@ var config = Config{
 		MapDatabase: "",
 		NumWorkers:  2,
 		CommitDelay: 1.0,
+	},
+	Cors: CORSConfig{
+		AllowedOrigins: []string{"*"},
+		AllowMethods:   "GET,POST,PATCH,PUT,DELETE",
+		AllowHeaders:   "Authorization,User-Agent,If-Modified-Since,Cache-Control,Content-Type,X-Total-Count",
+		MaxAge:         86400,
 	},
 }
 

@@ -7,26 +7,32 @@ import {
 } from "react-admin";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
+import { TblList, TblEdit, TblShow } from "./tbl";
+import { DbList, DbEdit, DbShow } from "./db";
+import { UrlList, UrlEdit, UrlShow } from "./url";
 
 export const App = () => (
   <Admin dataProvider={dataProvider} authProvider={authProvider}>
     <Resource
-      name="Schemas"
-      list={ListGuesser}
-      edit={EditGuesser}
-      show={ShowGuesser}
+      name="db"
+      options={{ label: 'Database schemas' }}
+      list={DbList}
+      edit={DbEdit}
+      show={DbShow}
     />
     <Resource
-      name="Sources"
-      list={ListGuesser}
-      edit={EditGuesser}
-      show={ShowGuesser}
+      name="url"
+      options={{ label: 'Sources' }}
+      list={UrlList}
+      edit={UrlEdit}
+      show={UrlShow}
     />
     <Resource
-      name="Tables"
-      list={ListGuesser}
-      edit={EditGuesser}
-      show={ShowGuesser}
+      name="tbl"
+      options={{ label: 'Tables' }}
+      list={TblList}
+      edit={TblEdit}
+      show={TblShow}
     />
   </Admin>
 );
