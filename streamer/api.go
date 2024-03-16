@@ -16,9 +16,11 @@ type App struct {
 	log           *slog.Logger
 }
 
-var app = App{
-	MaxGoroutines: 100,
-}
+var (
+	app = App{
+		MaxGoroutines: 100,
+	}
+)
 
 func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	log := app.log
@@ -38,6 +40,10 @@ func StartAPI(log *slog.Logger) {
 
 	// Create HTTP Server
 	router := mux.NewRouter().StrictSlash(true)
+
+	// Add web admin and route by default
+	router.Path("/").Handler(http.RedirectHandler("/admin/", http.StatusSeeOther))
+	router.PathPrefix("/admin").Handler(http.FileServer(http.FS(webDist)))
 
 	// Add utility handlers
 	router.Path("/metrics").Handler(promhttp.Handler())

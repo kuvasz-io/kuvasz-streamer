@@ -28,10 +28,13 @@ var (
 	err                error
 	dbmap              DBMap
 	destTables         PGTables
-)
 
-//go:embed migrations/*.sql
-var embedMigrations embed.FS
+	//go:embed migrations/*.sql
+	embedMigrations embed.FS
+
+	//go:embed admin
+	webDist embed.FS
+)
 
 func main() {
 	Configure(

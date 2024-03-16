@@ -1,5 +1,9 @@
 version: 1
 
+before:
+  hooks:
+    - make web
+
 gomod:
   proxy: true
   env:
@@ -22,7 +26,7 @@ builds:
       - amd64
       - arm64
 
-    main: ./cmd/
+    main: ./streamer/
 
 archives:
   - format: tar.gz

@@ -11,15 +11,18 @@ CONTAINER-LATEST   := ${REGISTRY}/${BINARY}:${CI_COMMIT_REF_NAME}
 LDFLAGS            += -X ${BINARY}.Version=${VERSION}
 LDFLAGS            += -X ${BINARY}.Build=${BUILD}
 
-all: build
+all: check web build
 
 check: 
 	staticcheck -checks=all ./...
 	go vet ./...
 	golangci-lint run
 
+web:
+	cd web; yarn build --outDir ../streamer/admin
+
 build:
-	go build -o ${BINARY} -ldflags="${LDFLAGS}" ./cmd/*.go
+	go build -o ${BINARY} -ldflags="${LDFLAGS}" ./streamer/*.go
 
 release:
 	goreleaser release --clean --snapshot
@@ -43,5 +46,5 @@ docs:
 clean:
 	rm -f ${BINARY}
 
-.PHONY: check build release rpmrepo aptrepo test docs clean
+.PHONY: check web build release rpmrepo aptrepo test docs clean
 

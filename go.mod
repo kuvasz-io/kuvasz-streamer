@@ -19,6 +19,7 @@ require (
 )
 
 require (
+	github.com/GoAdminGroup/go-admin v1.2.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
