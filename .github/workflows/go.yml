@@ -12,6 +12,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Web
+      run: make web
     - name: Vet
       run: make check
     - name: Build
