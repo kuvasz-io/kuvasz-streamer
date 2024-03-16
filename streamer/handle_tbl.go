@@ -7,12 +7,21 @@ import (
 )
 
 type tbl struct {
-	Id              int64 `json:"id"`
-	DBId            int64
+	Id              int64   `json:"id"`
+	DBId            int64   `json:"db_id"`
 	Name            string  `json:"name"`
 	Type            string  `json:"type"`
 	Target          string  `json:"target"`
 	PartitionsRegex *string `json:"partitions_regex"`
+}
+
+var tblColumns = map[string]string{
+	"id":               "tbl_id",
+	"db_id":            "db_id",
+	"name":             "name",
+	"type":             "type",
+	"target":           "target",
+	"partitions_regex": "partitions_regex",
 }
 
 func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
@@ -42,7 +51,10 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := PrepareReq(w, r)
 
-	rows, err := ConfigDB.Query(`SELECT tbl_id, db_id, name, type, target, partitions_regex FROM tbl`)
+	m := ValuesToModifier(r.URL.Query(), tblColumns)
+	query := BuildQuery(`SELECT tbl_id, db_id, name, type, target, partitions_regex FROM tbl`, m)
+	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
+	rows, err := ConfigDB.Query(query)
 	if err != nil {
 		log.Error("Cannot read database schema list", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl list", err)

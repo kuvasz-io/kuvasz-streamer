@@ -6,15 +6,22 @@ import (
 	"net/http"
 )
 
-type url struct {
+type URL struct {
 	Id   int64  `json:"id"`
 	DBId int64  `json:"db_id"`
 	SID  string `json:"sid"`
 	URL  string `json:"url"`
 }
 
+var URLColumns = map[string]string{
+	"id":    "db_id",
+	"db_id": "db_id",
+	"sid":   "sid",
+	"url":   "url",
+}
+
 func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
-	var item url
+	var item URL
 	req := PrepareReq(w, r)
 
 	id, err := ExtractId(r)
@@ -36,11 +43,14 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
-	var urls []url
+	var urls []URL
 
 	req := PrepareReq(w, r)
 
-	rows, err := ConfigDB.Query(`SELECT url_id, db_id, sid, url FROM url`)
+	m := ValuesToModifier(r.URL.Query(), URLColumns)
+	query := BuildQuery(`SELECT url_id, db_id, sid, url FROM url`, m)
+	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
+	rows, err := ConfigDB.Query(query)
 	if err != nil {
 		log.Error("Cannot read url list", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read url list", err)
@@ -48,7 +58,7 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var item url
+		var item URL
 		err := rows.Scan(&item.Id, &item.DBId, &item.SID, &item.URL)
 		if err != nil {
 			log.Error("Cannot scan item", "error", err)
@@ -61,7 +71,7 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
-	var item url
+	var item URL
 	req := PrepareReq(w, r)
 
 	body, err := io.ReadAll(r.Body)
@@ -113,7 +123,7 @@ func urlDeleteOneHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func urlPutOneHandler(w http.ResponseWriter, r *http.Request) {
-	var item url
+	var item URL
 	req := PrepareReq(w, r)
 
 	id, err := ExtractId(r)
@@ -147,7 +157,7 @@ func urlPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	ra, _ := result.RowsAffected()
 	if ra == 0 {
-		req.ReturnError(w, http.StatusNotFound, "NOT_FOUND", "tbl not found", nil)
+		req.ReturnError(w, http.StatusNotFound, "NOT_FOUND", "url not found", nil)
 		return
 	}
 

@@ -11,6 +11,12 @@ type db struct {
 	Name string `json:"name"`
 }
 
+var dbColumns = map[string]string{
+	"id":    "db_id",
+	"db_id": "db_id",
+	"name":  "name",
+}
+
 func dbGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item db
 	req := PrepareReq(w, r)
@@ -36,7 +42,10 @@ func dbGetManyHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := PrepareReq(w, r)
 
-	rows, err := ConfigDB.Query(`SELECT db_id, name FROM db`)
+	m := ValuesToModifier(r.URL.Query(), dbColumns)
+	query := BuildQuery(`SELECT db_id, name FROM db`, m)
+	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
+	rows, err := ConfigDB.Query(query)
 	if err != nil {
 		log.Error("Cannot read database schema list", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read database schema list", err)

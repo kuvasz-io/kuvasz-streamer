@@ -18,7 +18,7 @@ export const TblList = () => (
     <List>
         <Datagrid rowClick="edit">
             <TextField source="id" label="ID"/>
-            <ReferenceField source="DBId" reference="db" label="DB" />
+            <ReferenceField source="db_id" reference="db" label="DB" />
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -31,7 +31,7 @@ export const TblEdit = () => (
     <Edit>
         <SimpleForm>
             <TextField source="id" label="ID"/>
-            <ReferenceField source="DBId" reference="db" label="DB" />
+            <ReferenceField source="db_id" reference="db" label="DB" />
             <TextInput source="name" />
             <TableTypeInput />
             <TextInput source="target" />
@@ -44,7 +44,7 @@ export const TblShow = () => (
     <Show>
         <SimpleShowLayout>
             <TextField source="id" label="ID"/>
-            <ReferenceField source="DBId" reference="db" label="DB" />
+            <ReferenceField source="db_id" reference="db" label="DB" />
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -56,7 +56,7 @@ export const TblShow = () => (
 export const TblCreate = () => (
     <Create redirect="list">
         <SimpleForm>
-            <ReferenceInput source="DBId" reference="db" label="DB" />
+            <ReferenceInput source="db_id" reference="db" label="DB" />
             <TextInput source="name" />
             <TableTypeInput />
             <TextInput source="target" />
