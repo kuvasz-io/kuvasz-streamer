@@ -19,7 +19,7 @@ check:
 	golangci-lint run
 
 web:
-	cd web; yarn build --outDir ../streamer/admin
+	cd web; yarn install; yarn build --outDir ../streamer/admin
 
 build:
 	go build -o ${BINARY} -ldflags="${LDFLAGS}" ./streamer/*.go
