@@ -1,21 +1,24 @@
 import { 
-    Datagrid, 
     List, 
-    TextField, 
     Edit, 
+    Show,
+    Create,
+    Datagrid, 
+    TextField, 
     ReferenceField, 
     ReferenceInput, 
     SimpleForm, 
     TextInput,
-    Show,
     SimpleShowLayout
 } from 'react-admin';
+
+import { TableTypeInput } from './common';
 
 export const TblList = () => (
     <List>
         <Datagrid rowClick="edit">
-            <TextField source="id" />
-            <ReferenceField source="DBId" reference="db" />
+            <TextField source="id" label="ID"/>
+            <ReferenceField source="DBId" reference="db" label="DB" />
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -27,10 +30,10 @@ export const TblList = () => (
 export const TblEdit = () => (
     <Edit>
         <SimpleForm>
-            <TextInput source="id" />
-            <ReferenceInput source="DBId" reference="db" />
+            <TextField source="id" label="ID"/>
+            <ReferenceField source="DBId" reference="db" label="DB" />
             <TextInput source="name" />
-            <TextInput source="type" />
+            <TableTypeInput />
             <TextInput source="target" />
             <TextInput source="partitions_regex" />
         </SimpleForm>
@@ -40,12 +43,24 @@ export const TblEdit = () => (
 export const TblShow = () => (
     <Show>
         <SimpleShowLayout>
-            <TextField source="id" />
-            <ReferenceField source="DBId" reference="db" />
+            <TextField source="id" label="ID"/>
+            <ReferenceField source="DBId" reference="db" label="DB" />
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
             <TextField source="partitions_regex" />
         </SimpleShowLayout>
     </Show>
+);
+
+export const TblCreate = () => (
+    <Create redirect="list">
+        <SimpleForm>
+            <ReferenceInput source="DBId" reference="db" label="DB" />
+            <TextInput source="name" />
+            <TableTypeInput />
+            <TextInput source="target" />
+            <TextInput source="partitions_regex" />
+        </SimpleForm>
+    </Create>
 );

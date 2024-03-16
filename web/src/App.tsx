@@ -1,15 +1,12 @@
 import {
   Admin,
   Resource,
-  ListGuesser,
-  EditGuesser,
-  ShowGuesser,
 } from "react-admin";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
-import { TblList, TblEdit, TblShow } from "./tbl";
-import { DbList, DbEdit, DbShow } from "./db";
-import { UrlList, UrlEdit, UrlShow } from "./url";
+import { DbList, DbEdit, DbShow, DbCreate } from "./db";
+import { UrlList, UrlEdit, UrlShow, UrlCreate } from "./url";
+import { TblList, TblEdit, TblShow, TblCreate } from "./tbl";
 
 export const App = () => (
   <Admin dataProvider={dataProvider} authProvider={authProvider}>
@@ -19,6 +16,7 @@ export const App = () => (
       list={DbList}
       edit={DbEdit}
       show={DbShow}
+      create={DbCreate}
     />
     <Resource
       name="url"
@@ -26,6 +24,7 @@ export const App = () => (
       list={UrlList}
       edit={UrlEdit}
       show={UrlShow}
+      create={UrlCreate}
     />
     <Resource
       name="tbl"
@@ -33,6 +32,7 @@ export const App = () => (
       list={TblList}
       edit={TblEdit}
       show={TblShow}
+      create={TblCreate}
     />
   </Admin>
 );

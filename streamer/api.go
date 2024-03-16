@@ -72,6 +72,12 @@ func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 		"content_length", r.ContentLength,
 		"headers", r.Header,
 	)
+	origin := r.Header.Get("Origin")
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
+	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
+	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
+	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
 	http.NotFound(w, r)
 }
 
@@ -152,7 +158,7 @@ func contains(item string, list []string) bool {
 
 func CORSHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
-	log := req.Logger
+	log := log.With("handler", "CORS")
 
 	origin := r.Header.Get("Origin")
 	log.Info("CORS Handler", "Origin", origin)
@@ -246,12 +252,22 @@ func StartAPI(log *slog.Logger) {
 	router.Methods("OPTIONS").HandlerFunc(CORSHandler)
 
 	// Add app handlers
-	router.Path("/api/db/{id}").Handler(http.HandlerFunc(dbGetOneHandler))
-	router.Path("/api/db").Handler(http.HandlerFunc(dbGetManyHandler))
-	router.Path("/api/url/{id}").Handler(http.HandlerFunc(urlGetOneHandler))
-	router.Path("/api/url").Handler(http.HandlerFunc(urlGetManyHandler))
-	router.Path("/api/tbl/{id}").Handler(http.HandlerFunc(tblGetOneHandler))
-	router.Path("/api/tbl").Handler(http.HandlerFunc(tblGetManyHandler))
+	router.HandleFunc("/api/db/{id}", dbGetOneHandler).Methods("GET")
+	router.HandleFunc("/api/db", dbGetManyHandler).Methods("GET")
+	router.HandleFunc("/api/db", dbPostOneHandler).Methods("POST")
+	router.HandleFunc("/api/db/{id}", dbDeleteOneHandler).Methods("DELETE")
+	router.HandleFunc("/api/db/{id}", dbPutOneHandler).Methods("PUT")
+
+	router.HandleFunc("/api/url/{id}", urlGetOneHandler).Methods("GET")
+	router.HandleFunc("/api/url", urlGetManyHandler).Methods("GET")
+	router.HandleFunc("/api/url", urlPostOneHandler).Methods("POST")
+	router.HandleFunc("/api/url/{id}", urlDeleteOneHandler).Methods("DELETE")
+
+	router.HandleFunc("/api/tbl/{id}", tblGetOneHandler).Methods("GET")
+	router.HandleFunc("/api/tbl", tblGetManyHandler).Methods("GET")
+	router.HandleFunc("/api/tbl", tblPostOneHandler).Methods("POST")
+	router.HandleFunc("/api/tbl/{id}", tblDeleteOneHandler).Methods("DELETE")
+	router.HandleFunc("/api/tbl/{id}", tblPutOneHandler).Methods("PUT")
 
 	// Add middlewares
 	router.Use(ObservabilityMiddleware)

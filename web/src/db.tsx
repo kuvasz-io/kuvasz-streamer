@@ -1,20 +1,22 @@
 import { 
     Datagrid, 
     List, 
-    TextField, 
     Edit, 
+    Show,
+    Create,
+    TextField, 
     ReferenceField, 
+    TextInput,
     ReferenceInput, 
     SimpleForm, 
-    TextInput,
-    Show,
     SimpleShowLayout
 } from 'react-admin';
+
 
 export const DbList = () => (
     <List>
         <Datagrid rowClick="edit">
-            <TextField source="id" />
+            <TextField source="id" label="ID" />
             <TextField source="name" />
         </Datagrid>
     </List>
@@ -23,7 +25,7 @@ export const DbList = () => (
 export const DbEdit = () => (
     <Edit>
         <SimpleForm>
-            <TextInput source="id" />
+            <TextField source="id" label="ID" />
             <TextInput source="name" />
         </SimpleForm>
     </Edit>
@@ -32,9 +34,16 @@ export const DbEdit = () => (
 export const DbShow = () => (
     <Show>
         <SimpleShowLayout>
-            <TextInput source="id" />
-            <TextInput source="name" />
+            <TextField source="id" label="ID"  />
+            <TextField source="name" />
         </SimpleShowLayout>
     </Show>
 );
 
+export const DbCreate = () => (
+    <Create redirect="list">
+        <SimpleForm>
+            <TextInput source="name" multiline={false} label="Name" />
+        </SimpleForm>
+    </Create>
+);
