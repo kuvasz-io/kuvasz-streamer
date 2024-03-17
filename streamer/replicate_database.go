@@ -196,6 +196,8 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 	inStream := false
 
 	for {
+		urlHeartbeat.WithLabelValues(database.Name, url.SID).Set(float64(time.Now().Unix()))
+
 		if time.Now().After(nextStandbyMessageDeadline) {
 			err = pglogrepl.SendStandbyStatusUpdate(
 				ctx,

@@ -1,15 +1,25 @@
 import {
   Admin,
   Resource,
+  useStore
 } from "react-admin";
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
+import { softLightTheme } from './softTheme';
+import Layout  from "./layout";
+
 import { DbList, DbEdit, DbShow, DbCreate } from "./db";
 import { UrlList, UrlEdit, UrlShow, UrlCreate } from "./url";
 import { TblList, TblEdit, TblShow, TblCreate } from "./tbl";
 
 export const App = () => (
-  <Admin dataProvider={dataProvider} authProvider={authProvider}>
+  <Admin 
+    disableTelemetry
+    dataProvider={dataProvider} 
+    authProvider={authProvider}
+    theme={softLightTheme}
+    layout={Layout}
+    >
     <Resource
       name="db"
       options={{ label: 'Database schemas' }}

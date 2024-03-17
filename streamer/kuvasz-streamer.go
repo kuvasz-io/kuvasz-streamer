@@ -88,7 +88,7 @@ func main() {
 	log.Info("Start processing source databases")
 	for _, database := range dbmap {
 		for _, url := range database.Urls {
-			log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "id", url.SID)
+			log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "sid", url.SID)
 			go DoReplicateDatabase(database, url)
 		}
 	}

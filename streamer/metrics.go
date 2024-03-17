@@ -5,6 +5,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	dto "github.com/prometheus/client_model/go"
 )
 
 var (
@@ -42,4 +43,19 @@ var (
 			Help: "Total number of INSERT/UPDATE/DELETE operations.",
 		}, []string{"channel"},
 	)
+
+	urlHeartbeat = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "url_heartbeat",
+			Help: "Timestamp of last known activity",
+		}, []string{"database", "sid"},
+	)
 )
+
+func getMetricValue(col prometheus.Collector) float64 {
+	c := make(chan prometheus.Metric, 1) // 1 for metric with no vector
+	col.Collect(c)                       // collect current metric value into the channel
+	m := dto.Metric{}
+	_ = (<-c).Write(&m) // read metric value from the channel
+	return *m.Counter.Value
+}

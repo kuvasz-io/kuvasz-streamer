@@ -32,10 +32,10 @@ export const TblEdit = () => (
         <SimpleForm>
             <TextField source="id" label="ID"/>
             <ReferenceField source="db_id" reference="db" label="DB" />
-            <TextInput source="name" />
+            <TextInput source="name" fullWidth />
             <TableTypeInput />
-            <TextInput source="target" />
-            <TextInput source="partitions_regex" />
+            <TextInput source="target" fullWidth />
+            <TextInput source="partitions_regex" fullWidth />
         </SimpleForm>
     </Edit>
 );
@@ -57,10 +57,10 @@ export const TblCreate = () => (
     <Create redirect="list">
         <SimpleForm>
             <ReferenceInput source="db_id" reference="db" label="DB" />
-            <TextInput source="name" />
+            <TextInput source="name" fullWidth />
             <TableTypeInput />
-            <TextInput source="target" />
-            <TextInput source="partitions_regex" />
+            <TextInput source="target" fullWidth />
+            <TextInput source="partitions_regex" fullWidth />
         </SimpleForm>
     </Create>
 );

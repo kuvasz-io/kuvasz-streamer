@@ -29,7 +29,7 @@ export const UrlEdit = () => (
             <TextField source="id" label="ID"/>
             <ReferenceField source="db_id" reference="db" label="DB"/>
             <TextInput source="sid" label="SID"/>
-            <TextInput source="url" label="URL"/>
+            <TextInput source="url" label="URL" fullWidth />
         </SimpleForm>
     </Edit>
 );
@@ -40,7 +40,7 @@ export const UrlShow = () => (
             <TextField source="id" label="ID"/>
             <ReferenceField source="db_id" reference="db" label="DB"/>
             <TextField source="sid" label="SID"/>
-            <TextField source="url" label="URL"/>
+            <TextField source="url" label="URL" />
         </SimpleShowLayout>
     </Show>
 );
@@ -50,7 +50,7 @@ export const UrlCreate = () => (
         <SimpleForm>
             <ReferenceInput source="db_id" reference="db" label="DB"/>
             <TextInput source="sid" label="SID"/>
-            <TextInput source="url" label="URL"/>
+            <TextInput source="url" label="URL" fullWidth/>
         </SimpleForm>
     </Create>
 );
