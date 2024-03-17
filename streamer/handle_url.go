@@ -7,10 +7,12 @@ import (
 )
 
 type URL struct {
-	ID   int64  `json:"id"`
-	DBId int64  `json:"db_id"`
-	SID  string `json:"sid"`
-	URL  string `json:"url"`
+	ID     int64  `json:"id"`
+	DBId   int64  `json:"db_id"`
+	DBName string `json:"db_name"`
+	SID    string `json:"sid"`
+	URL    string `json:"url"`
+	Up     bool   `json:"up"`
 }
 
 var URLColumns = map[string]string{
@@ -32,13 +34,14 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ConfigDB.QueryRow(
-		`SELECT url_id, db_id, sid, url FROM url WHERE url_id = ?`,
-		id).Scan(&item.ID, &item.DBId, &item.SID, &item.URL)
+		`SELECT url_id, url.db_id, db.name, sid, url FROM url inner join db on url.db_id = db.db_id WHERE url_id = ?`,
+		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.SID, &item.URL)
 	if err != nil {
 		log.Error("Cannot read url", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
 		return
 	}
+	item.Up = getStatus(item.DBName, item.SID)
 	req.ReturnOK(w, r, item, 1)
 }
 
@@ -48,7 +51,7 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	m := ValuesToModifier(r.URL.Query(), URLColumns)
-	query := BuildQuery(`SELECT url_id, db_id, sid, url FROM url`, m)
+	query := BuildQuery(`SELECT url_id, url.db_id, db.name, sid, url FROM url inner join db on url.db_id=db.db_id`, m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
 	rows, err := ConfigDB.Query(query)
 	if err != nil {
@@ -59,12 +62,13 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	for rows.Next() {
 		var item URL
-		err := rows.Scan(&item.ID, &item.DBId, &item.SID, &item.URL)
+		err := rows.Scan(&item.ID, &item.DBId, &item.DBName, &item.SID, &item.URL)
 		if err != nil {
 			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
 			return
 		}
+		item.Up = getStatus(item.DBName, item.SID)
 		urls = append(urls, item)
 	}
 	req.ReturnOK(w, r, urls, len(urls))

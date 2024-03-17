@@ -9,6 +9,7 @@ import {
     ReferenceInput, 
     SimpleForm, 
     TextInput,
+    SelectInput,
     SimpleShowLayout
 } from 'react-admin';
 
@@ -18,7 +19,9 @@ export const TblList = () => (
     <List>
         <Datagrid rowClick="edit">
             <TextField source="id" label="ID"/>
-            <ReferenceField source="db_id" reference="db" label="DB" />
+            <ReferenceField source="db_id" reference="db"  label="DB">
+                <TextField source="name" />
+            </ReferenceField>
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -31,7 +34,9 @@ export const TblEdit = () => (
     <Edit>
         <SimpleForm>
             <TextField source="id" label="ID"/>
-            <ReferenceField source="db_id" reference="db" label="DB" />
+            <ReferenceField source="db_id" reference="db"  label="DB">
+                <TextField source="name" />
+            </ReferenceField>
             <TextInput source="name" fullWidth />
             <TableTypeInput />
             <TextInput source="target" fullWidth />
@@ -44,7 +49,9 @@ export const TblShow = () => (
     <Show>
         <SimpleShowLayout>
             <TextField source="id" label="ID"/>
-            <ReferenceField source="db_id" reference="db" label="DB" />
+            <ReferenceField source="db_id" reference="db"  label="DB">
+                <TextField source="name" />
+            </ReferenceField>
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -56,7 +63,9 @@ export const TblShow = () => (
 export const TblCreate = () => (
     <Create redirect="list">
         <SimpleForm>
-            <ReferenceInput source="db_id" reference="db" label="DB" />
+            <ReferenceInput source="db_id" reference="db" label="DB" >
+                <SelectInput optionText="name"/>
+            </ReferenceInput>
             <TextInput source="name" fullWidth />
             <TableTypeInput />
             <TextInput source="target" fullWidth />

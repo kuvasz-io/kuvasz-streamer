@@ -57,5 +57,14 @@ func getMetricValue(col prometheus.Collector) float64 {
 	col.Collect(c)                       // collect current metric value into the channel
 	m := dto.Metric{}
 	_ = (<-c).Write(&m) // read metric value from the channel
-	return *m.Counter.Value
+	return *m.Gauge.Value
+}
+
+func getStatus(database string, sid string) bool {
+	g := urlHeartbeat.WithLabelValues(database, sid)
+	if g == nil {
+		return false
+	}
+	m := getMetricValue(g)
+	return float64(time.Now().Unix())-m < 10
 }
