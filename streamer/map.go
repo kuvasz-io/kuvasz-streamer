@@ -14,20 +14,22 @@ import (
 type (
 	DBMap          []SourceDatabase
 	SourceDatabase struct {
+		ID     int64                  `json:"db_id"`
 		Name   string                 `yaml:"database" json:"database"`
 		Urls   []SourceURL            `yaml:"urls"     json:"urls"`
 		Tables map[string]SourceTable `yaml:"tables"   json:"tables"`
 	}
 	SourceURL struct {
-		URL string `yaml:"url" json:"url"`
-		SID string `yaml:"sid" json:"sid"`
+		ID  int64  `json:"url_id"`
+		URL string `yaml:"url"     json:"url"`
+		SID string `yaml:"sid"     json:"sid"`
 	}
 	SourceTable struct {
+		ID              int64  `json:"tbl_id"`
 		Type            string `yaml:"type,omitempty"             json:"type"`
 		Target          string `yaml:"target,omitempty"           json:"target"`
 		PartitionsRegex string `yaml:"partitions_regex,omitempty" json:"partitions_regex"`
 		compiledRegex   *regexp.Regexp
-		id              int
 	}
 )
 
@@ -37,10 +39,12 @@ func ReadMapDatabase(db *sql.DB) {
 	log.Info("Reading map database")
 	err := db.QueryRow(`SELECT json_group_array(
 		json_object(
+		  'db_id', d.db_id,
 		  'database', d.name,
 		  'urls', (
 			SELECT json_group_array(
 			  json_object(
+				'url_id', u.url_id,
 				'url', u.url,
 				'sid', u.sid
 			  )
@@ -52,6 +56,7 @@ func ReadMapDatabase(db *sql.DB) {
 			SELECT json_group_object(
 				t.name,
 			  json_object(
+				'tbl_id', t.tbl_id,
 				'type', t.type,
 				'target', t.target,
 				'partitions_regex', t.partitions_regex
@@ -91,11 +96,37 @@ func ReadMapFile(filename string) {
 		os.Exit(1)
 	}
 	log.Info("Read map file", "map", dbmap)
+	log.Debug("Assigning IDs for yaml map file")
+	var dbid, urlid, tblid int64
+	dbid = 1
+	urlid = 1
+	tblid = 1
+	for k, db := range dbmap {
+		db.ID = dbid
+		dbmap[k] = db
+		dbid++
+		for k, url := range db.Urls {
+			url.ID = urlid
+			db.Urls[k] = url
+			urlid++
+		}
+		for k, v := range db.Tables {
+			v.ID = tblid
+			if v.Type == "" {
+				v.Type = "clone"
+			}
+			if v.Target == "" {
+				v.Target = k
+			}
+			db.Tables[k] = v
+			tblid++
+		}
+	}
+	log.Info("Fixed map file", "map", dbmap)
 }
 
 func CompileRegexes() {
-	log.Debug("Compiling partition regexes and assigning ids")
-	i := 0
+	log.Debug("Compiling partition regexes")
 	for _, db := range dbmap {
 		for k, v := range db.Tables {
 			if v.PartitionsRegex != "" {
@@ -106,8 +137,6 @@ func CompileRegexes() {
 				}
 				v.compiledRegex = re
 			}
-			v.id = i
-			i++
 			db.Tables[k] = v
 		}
 	}

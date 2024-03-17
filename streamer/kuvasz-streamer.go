@@ -62,7 +62,14 @@ func main() {
 	log.Info("Connected to target database", "url", config.Database.URL)
 
 	// Get destination metadata
-	destTables, err = GetTables(log, DestConnectionPool, "public")
+	log.Info("Getting destination table metadata")
+	conn, err := DestConnectionPool.Acquire(context.Background())
+	if err != nil {
+		log.Error("Can't get destination table metadata", "error", err)
+		os.Exit(1)
+	}
+
+	destTables, err = GetTables(log, conn.Conn(), "public")
 	if err != nil {
 		log.Error("Can't get destination table metadata", "error", err)
 		os.Exit(1)

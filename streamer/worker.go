@@ -64,7 +64,7 @@ func (w Worker) work() {
 }
 
 func SendWork(op operation) {
-	Workers[op.id%len(Workers)].workChannel <- op
+	Workers[op.id%int64(len(Workers))].workChannel <- op
 }
 
 func StartWorkers(numWorkers int) {

@@ -17,7 +17,7 @@ type (
 		opCode      string
 		sourceTable string
 		destTable   string
-		id          int
+		id          int64
 		relation    PGRelation
 		values      map[string]any
 		old         uint8
@@ -161,7 +161,7 @@ func processMessage(
 		op.destTable = destTable
 		values := getValues(rel, m.Tuple.Columns, typeMap)
 		op.values = values
-		op.id = sourceTable.id
+		op.id = sourceTable.ID
 		log.Debug("XLogData INSERT", "namespace", rel.Namespace, "relation", rel.RelationName, "values", values)
 		if sourceTable.Type == TableTypeHistory {
 			t0, _ := time.Parse("2006-01-02", "1900-01-01")
@@ -201,7 +201,7 @@ func processMessage(
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
 		op.relation = relations[m.RelationID]
-		op.id = sourceTable.id
+		op.id = sourceTable.ID
 		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
 		if sourceTables[rel.RelationName].Type == TableTypeHistory {
 			err = op.updateHistory(destTable, relations[m.RelationID], op.values, op.old, op.oldValues)
@@ -242,7 +242,7 @@ func processMessage(
 		op.destTable = destTable
 		op.relation = relations[m.RelationID]
 		op.old = m.OldTupleType
-		op.id = sourceTable.id
+		op.id = sourceTable.ID
 		if sourceTable.Type == TableTypeHistory {
 			err = op.deleteHistory(destTable, relations[m.RelationID], op.values, m.OldTupleType)
 		} else {
