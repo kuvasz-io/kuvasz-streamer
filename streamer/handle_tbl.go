@@ -9,6 +9,7 @@ import (
 type tbl struct {
 	ID              int64   `json:"id"`
 	DBId            int64   `json:"db_id"`
+	DBName          string  `json:"db_name"`
 	Name            string  `json:"name"`
 	Type            string  `json:"type"`
 	Target          string  `json:"target"`
@@ -16,12 +17,12 @@ type tbl struct {
 }
 
 var tblColumns = map[string]string{
-	"id":               "tbl_id",
-	"db_id":            "db_id",
-	"name":             "name",
-	"type":             "type",
-	"target":           "target",
-	"partitions_regex": "partitions_regex",
+	"id":               "tbl.tbl_id",
+	"db_id":            "tbl.db_id",
+	"name":             "tbl.name",
+	"type":             "tbl.type",
+	"target":           "tbl.target",
+	"partitions_regex": "tbl.partitions_regex",
 }
 
 func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +37,10 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ConfigDB.QueryRow(
-		`SELECT tbl_id, db_id, name, type, target, partitions_regex FROM tbl WHERE tbl_id = ?`,
-		id).Scan(&item.ID, &item.DBId, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
+		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id
+		WHERE tbl_id = ?`,
+		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 	if err != nil {
 		log.Error("Cannot read tbl", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
@@ -52,7 +55,10 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	m := ValuesToModifier(r.URL.Query(), tblColumns)
-	query := BuildQuery(`SELECT tbl_id, db_id, name, type, target, partitions_regex FROM tbl`, m)
+	query := BuildQuery(
+		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
+		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id`,
+		m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
 	rows, err := ConfigDB.Query(query)
 	if err != nil {
@@ -63,7 +69,7 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	for rows.Next() {
 		var item tbl
-		err := rows.Scan(&item.ID, &item.DBId, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+		err := rows.Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 		if err != nil {
 			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)

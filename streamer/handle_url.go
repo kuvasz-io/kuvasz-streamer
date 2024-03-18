@@ -16,10 +16,10 @@ type URL struct {
 }
 
 var URLColumns = map[string]string{
-	"id":    "db_id",
-	"db_id": "db_id",
-	"sid":   "sid",
-	"url":   "url",
+	"id":    "url.db_id",
+	"db_id": "url.db_id",
+	"sid":   "url.sid",
+	"url":   "url.url",
 }
 
 func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +34,8 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ConfigDB.QueryRow(
-		`SELECT url_id, url.db_id, db.name, sid, url FROM url inner join db on url.db_id = db.db_id WHERE url_id = ?`,
+		`SELECT url.url_id, url.db_id, db.name as db_name, url.sid, url.url 
+		FROM url inner join db on url.db_id = db.db_id WHERE url_id = ?`,
 		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.SID, &item.URL)
 	if err != nil {
 		log.Error("Cannot read url", "id", id, "error", err)
@@ -51,7 +52,10 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	m := ValuesToModifier(r.URL.Query(), URLColumns)
-	query := BuildQuery(`SELECT url_id, url.db_id, db.name, sid, url FROM url inner join db on url.db_id=db.db_id`, m)
+	query := BuildQuery(
+		`SELECT url.url_id, url.db_id, db.name as db_name, url.sid, url.url 
+		FROM url inner join db on url.db_id=db.db_id`,
+		m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
 	rows, err := ConfigDB.Query(query)
 	if err != nil {

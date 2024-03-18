@@ -11,6 +11,7 @@ import Layout  from "./layout";
 import { DbList, DbEdit, DbShow, DbCreate } from "./db";
 import { UrlList, UrlEdit, UrlShow, UrlCreate } from "./url";
 import { TblList, TblEdit, TblShow, TblCreate } from "./tbl";
+import { MapList } from "./map";
 
 export const App = () => (
   <Admin 
@@ -43,6 +44,11 @@ export const App = () => (
       edit={TblEdit}
       show={TblShow}
       create={TblCreate}
+    />
+    <Resource
+      name="map"
+      options={{ label: 'Map' }}
+      list={MapList}
     />
   </Admin>
 );
