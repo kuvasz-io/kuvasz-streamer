@@ -108,7 +108,7 @@ func DoReplicateDatabase(database SourceDatabase, url SourceURL) {
 func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 	// Connect to selected source database
 	log := log.With("db-sid", database.Name+"-"+url.SID)
-	parsedConfig, err := pgx.ParseConfig(url.URL)
+	parsedConfig, err := pgx.ParseConfig(strings.Split(url.URL, "?")[0] + "?replication=database&application_name=kuvasz_" + database.Name)
 	if err != nil {
 		log.Error("Error parsing database url", "url", url.URL, "error", err)
 		return

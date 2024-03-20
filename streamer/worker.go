@@ -27,9 +27,7 @@ func (w Worker) work() {
 	for {
 		select {
 		case <-timer.C:
-			log.Debug("timer expired, committing transaction")
 			if w.tx == nil {
-				log.Debug("no transaction to commit, restarting timer")
 				timer.Reset(time.Duration(config.App.CommitDelay) * time.Second)
 				continue
 			}

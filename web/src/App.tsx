@@ -1,8 +1,9 @@
 import {
   Admin,
   Resource,
-  useStore
 } from "react-admin";
+import { Route } from 'react-router-dom';
+
 import { dataProvider } from "./dataProvider";
 import { authProvider } from "./authProvider";
 import { softLightTheme } from './softTheme';
@@ -11,7 +12,8 @@ import Layout  from "./layout";
 import { DbList, DbEdit, DbShow, DbCreate } from "./db";
 import { UrlList, UrlEdit, UrlShow, UrlCreate } from "./url";
 import { TblList, TblEdit, TblShow, TblCreate } from "./tbl";
-import { MapList } from "./map";
+import { MapList, MapEdit } from "./map";
+// import { MapList, MapEdit, MapShow } from "./map";
 
 export const App = () => (
   <Admin 
@@ -45,10 +47,12 @@ export const App = () => (
       show={TblShow}
       create={TblCreate}
     />
-    <Resource
+    <Resource 
       name="map"
-      options={{ label: 'Map' }}
+      options={{ label: 'Map'}}
       list={MapList}
+      edit={MapEdit}
+      // show={MapShow}
     />
   </Admin>
 );

@@ -245,7 +245,8 @@ func StartAPI(log *slog.Logger) {
 	router.Methods("OPTIONS").HandlerFunc(CORSHandler)
 
 	// Add app handlers
-	router.HandleFunc("/api/map", MapGetHandler).Methods("GET")
+	router.HandleFunc("/api/map", MapGetManyHandler).Methods("GET")
+	router.HandleFunc("/api/map/{id}", MapGetOneHandler).Methods("GET")
 
 	router.HandleFunc("/api/db/{id}", dbGetOneHandler).Methods("GET")
 	router.HandleFunc("/api/db", dbGetManyHandler).Methods("GET")
@@ -254,7 +255,6 @@ func StartAPI(log *slog.Logger) {
 	router.HandleFunc("/api/db/{id}", dbPutOneHandler).Methods("PUT")
 
 	router.HandleFunc("/api/url/{id}", urlGetOneHandler).Methods("GET")
-	router.HandleFunc("/api/url/{id}/tables", TablesGetHandler).Methods("GET")
 	router.HandleFunc("/api/url", urlGetManyHandler).Methods("GET")
 	router.HandleFunc("/api/url", urlPostOneHandler).Methods("POST")
 	router.HandleFunc("/api/url/{id}", urlDeleteOneHandler).Methods("DELETE")

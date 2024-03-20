@@ -72,8 +72,10 @@ func main() {
 	destTables, err = GetTables(log, conn.Conn(), "public")
 	if err != nil {
 		log.Error("Can't get destination table metadata", "error", err)
+		conn.Release()
 		os.Exit(1)
 	}
+	conn.Release()
 
 	if config.App.MapDatabase != "" {
 		ConfigDB, err = sql.Open("sqlite3", config.App.MapDatabase)
@@ -82,7 +84,11 @@ func main() {
 			os.Exit(1)
 		}
 		Migrate(embedMigrations, "migrations", ConfigDB)
-		ReadMapDatabase(ConfigDB)
+		dbmap, err = ReadMapDatabase(ConfigDB)
+		if err != nil {
+			log.Error("Can't read config database, error=%w", err)
+			os.Exit(1)
+		}
 	} else {
 		ReadMapFile(config.App.MapFile)
 	}

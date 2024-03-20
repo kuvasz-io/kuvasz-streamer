@@ -10,6 +10,7 @@ import {
     SimpleForm, 
     TextInput,
     SelectInput,
+    SelectField,
     SimpleShowLayout
 } from 'react-admin';
 

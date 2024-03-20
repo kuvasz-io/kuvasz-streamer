@@ -61,6 +61,7 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 			  INNER JOIN pg_catalog.pg_class as pg ON pg.relname=c.table_name
 	          WHERE c.table_catalog=current_database() 
 			    and not pg.relispartition
+				and pg.relkind='r'
 	            and c.table_schema=$1;`
 
 	pgTables := make(PGTables)

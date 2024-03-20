@@ -92,7 +92,7 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(body, &item)
 	if err != nil {
-		log.Error("could not decode db", "error", err)
+		log.Error("could not decode tbl", "error", err)
 		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
 		return
 	}
