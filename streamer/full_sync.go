@@ -113,12 +113,14 @@ func syncTable(log *slog.Logger,
 }
 
 func syncAllTables(log *slog.Logger, db string, sid string, sourceTables map[string]SourceTable, sourceConnection *pgconn.PgConn) error {
+	log.Debug("Sync all tables", "sourceTables", sourceTables)
 	for sourceTableName := range sourceTables {
 		_, destTableName, err := MapSourceTable(sourceTableName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return err
 		}
+		log.Debug("Syncing", "sourceTable", sourceTableName, "destTable", destTableName)
 		_ = syncTable(log, db, sid, sourceTableName, destTableName, sourceConnection)
 	}
 	return nil

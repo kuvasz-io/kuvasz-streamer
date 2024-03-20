@@ -108,14 +108,15 @@ func DoReplicateDatabase(database SourceDatabase, url SourceURL) {
 func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 	// Connect to selected source database
 	log := log.With("db-sid", database.Name+"-"+url.SID)
-	parsedConfig, err := pgx.ParseConfig(strings.Split(url.URL, "?")[0] + "?replication=database&application_name=kuvasz_" + database.Name)
+	databaseURL := strings.Split(url.URL, "?")[0] + "?replication=database&application_name=kuvasz_" + database.Name
+	parsedConfig, err := pgx.ParseConfig(databaseURL)
 	if err != nil {
-		log.Error("Error parsing database url", "url", url.URL, "error", err)
+		log.Error("Error parsing database url", "url", databaseURL, "error", err)
 		return
 	}
 	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	dbName := parsedConfig.Database
-	log.Info("Connecting", "databaseURL", url.URL)
+	log.Info("Connecting", "databaseURL", databaseURL)
 	ctx := context.Background()
 	conn, err := pgx.ConnectConfig(ctx, parsedConfig)
 	if err != nil {

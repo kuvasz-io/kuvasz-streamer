@@ -56,12 +56,13 @@ func getPrimaryKey(log *slog.Logger, database *pgx.Conn, schemaName string, tabl
 }
 
 func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTables, error) {
-	query := `SELECT c.table_name, c.column_name, c.udt_name, t.oid from information_schema.columns as c
-			  INNER JOIN pg_type as t ON c.udt_name=t.typname
-			  INNER JOIN pg_catalog.pg_class as pg ON pg.relname=c.table_name
+	query := `SELECT c.table_name, c.column_name, c.udt_name, t.oid 
+			  FROM information_schema.columns as c
+			      INNER JOIN pg_type as t ON c.udt_name=t.typname
+			      INNER JOIN pg_catalog.pg_class as pg ON pg.relname=c.table_name
 	          WHERE c.table_catalog=current_database() 
 			    and not pg.relispartition
-				and pg.relkind='r'
+				and pg.relkind in ('r', 'p')
 	            and c.table_schema=$1;`
 
 	pgTables := make(PGTables)

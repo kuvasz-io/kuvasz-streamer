@@ -1,14 +1,14 @@
 - database: db1
   urls:
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/db1?replication=database&application_name=repl_db1
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/db1
     sid: 12
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6013/db1?replication=database&application_name=repl_db1
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6013/db1
     sid: 13
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6014/db1?replication=database&application_name=repl_db1
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6014/db1
     sid: 14
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6015/db1?replication=database&application_name=repl_db1
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6015/db1
     sid: 15
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db1?replication=database&application_name=repl_db1
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db1
     sid: 16
   tables:
     t0:
@@ -26,15 +26,15 @@
 
 - database: db2
   urls:
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/db2?replication=database&application_name=repl_db2
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/db2
     sid: 12
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6013/db2?replication=database&application_name=repl_db2
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6013/db2
     sid: 13
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6014/db2?replication=database&application_name=repl_db2
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6014/db2
     sid: 14
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6015/db2?replication=database&application_name=repl_db2
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6015/db2
     sid: 15
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db2?replication=database&application_name=repl_db2
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db2
     sid: 16
   tables:
     s1:
