@@ -13,6 +13,8 @@ type URL struct {
 	SID    string `json:"sid"`
 	URL    string `json:"url"`
 	Up     bool   `json:"up"`
+	Status string `json:"status"`
+	Error  string `json:"error"`
 }
 
 var URLColumns = map[string]string{
@@ -73,6 +75,7 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		item.Up = getStatus(item.DBName, item.SID)
+		item.Error = URLError[item.URL]
 		urls = append(urls, item)
 	}
 	req.ReturnOK(w, r, urls, len(urls))

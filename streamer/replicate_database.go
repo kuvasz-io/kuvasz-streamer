@@ -97,22 +97,23 @@ func pgVersion(log *slog.Logger, conn *pgx.Conn) (int, error) {
 	return version, nil
 }
 
-func DoReplicateDatabase(database SourceDatabase, url SourceURL) {
+func DoReplicateDatabase(database SourceDatabase, url *SourceURL) {
 	for {
-		ReplicateDatabase(database, url)
+		err := ReplicateDatabase(database, url)
+		log.Error(err.Error(), "db-sid", database.Name+"_"+url.SID, "url", url.URL)
+		URLError[url.URL] = err.Error()
 		time.Sleep(60 * time.Second)
 	}
 }
 
 //nolint:funlen,gocognit // This is is just multiple steps and needs to be in a single function
-func ReplicateDatabase(database SourceDatabase, url SourceURL) {
+func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 	// Connect to selected source database
 	log := log.With("db-sid", database.Name+"-"+url.SID)
 	databaseURL := strings.Split(url.URL, "?")[0] + "?replication=database&application_name=kuvasz_" + database.Name
 	parsedConfig, err := pgx.ParseConfig(databaseURL)
 	if err != nil {
-		log.Error("Error parsing database url", "url", databaseURL, "error", err)
-		return
+		return fmt.Errorf("cannot parse url=%s, error=%w", databaseURL, err)
 	}
 	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	dbName := parsedConfig.Database
@@ -120,30 +121,39 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 	ctx := context.Background()
 	conn, err := pgx.ConnectConfig(ctx, parsedConfig)
 	if err != nil {
-		log.Error("Cannot start replication connection", "databaseURL", url.URL, "error", err)
-		return
+		return fmt.Errorf("cannot start replication connection, error=%w", err)
 	}
 	replConn := conn.PgConn()
 
 	// Validate server version
+	log.Info("Validating server version")
 	ver, err := pgVersion(log, conn)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		return fmt.Errorf("cannot get postgres server version, error=%w", err)
 	}
 
 	// Get server informatioon
 	log.Info("Identifying system")
 	sysident, err := pglogrepl.IdentifySystem(ctx, replConn)
 	if err != nil {
-		log.Error("IdentifySystem failed", "error", err)
-		return
+		return fmt.Errorf("cannot identify system, error=%w", err)
 	}
 	log.Info("System identification",
 		"SystemID", sysident.SystemID,
 		"Timeline", sysident.Timeline,
 		"XLogPos", sysident.XLogPos,
 		"DBName", sysident.DBName)
+
+	// Check for correct wal_level
+	log.Info("Checking wal_level is logical")
+	var walLevel string
+	err = conn.QueryRow(ctx, "show wal_level").Scan(&walLevel)
+	if err != nil {
+		return fmt.Errorf("cannot get wal_level, error=%w", err)
+	}
+	if walLevel != "logical" {
+		return fmt.Errorf("wal_level must be logical, got %s, change configuration in postgresql.conf and restart server", walLevel)
+	}
 
 	// Check existing replication slot and existing consumer
 	slotName := "kuvasz_" + dbName
@@ -152,16 +162,14 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 	// Create slot if it does not exist, fail if there is an existing consumer
 	oldSlot, lsn, err := createReplicationSlot(log, conn, slotName, sysident.XLogPos)
 	if err != nil {
-		log.Error(err.Error())
-		return
+		return fmt.Errorf("cannot create replication slot, error=%w", err)
 	}
 
 	// Perform full table sync if slot was just created
 	if !oldSlot {
 		err := syncAllTables(log, dbName, url.SID, database.Tables, replConn)
 		if err != nil {
-			log.Error("Cannot perform initial sync")
-			return
+			return fmt.Errorf("cannot perform initial sync, error=%w", err)
 		}
 		log.Debug("Finished full table sync")
 		time.Sleep(time.Duration(config.Maintenance.StartDelay) * time.Second)
@@ -180,8 +188,7 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 			Mode:       pglogrepl.LogicalReplication,
 			PluginArgs: args})
 	if err != nil {
-		log.Error("StartReplication failed", "error", err)
-		return
+		return fmt.Errorf("cannot start replication, error=%w", err)
 	}
 	log.Info("Started logical replication slot", "slotname", slotName, "lsn", lsn)
 
@@ -211,8 +218,7 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 					ReplyRequested:   false,
 				})
 			if err != nil {
-				log.Error("SendStandbyStatusUpdate failed", "error", err)
-				return
+				return fmt.Errorf("cannot send SendStandbyStatusUpdate, error=%w", err)
 			}
 			log.Debug("Sent Standby status message", "pos", clientXLogPos.String())
 			nextStandbyMessageDeadline = time.Now().Add(standbyMessageTimeout)
@@ -225,13 +231,11 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 			if pgconn.Timeout(err) {
 				continue
 			}
-			log.Error("ReceiveMessage failed", "error", err)
-			return
+			return fmt.Errorf("cannot ReceiveMessage, error=%w", err)
 		}
 
 		if errMsg, ok := rawMsg.(*pgproto3.ErrorResponse); ok {
-			log.Error("received Postgres WAL error", "error", errMsg)
-			return
+			return fmt.Errorf("received Postgres WAL error=%v", errMsg)
 		}
 
 		msg, ok := rawMsg.(*pgproto3.CopyData)
@@ -260,12 +264,11 @@ func ReplicateDatabase(database SourceDatabase, url SourceURL) {
 		case pglogrepl.XLogDataByteID:
 			xld, err := pglogrepl.ParseXLogData(msg.Data[1:])
 			if err != nil {
-				log.Error("ParseXLogData failed:", "error", err)
-				return
+				return fmt.Errorf("cannot ParseXLogData, error=%w", err)
 			}
 
 			log.Debug("XLogData", "WALStart", xld.WALStart, "ServerWALEnd", xld.ServerWALEnd, "ServerTime", xld.ServerTime)
-			processMessage(log, database, url, protocolVersion, xld.WALData, relations, typeMap, &inStream)
+			processMessage(log, database, *url, protocolVersion, xld.WALData, relations, typeMap, &inStream)
 
 			if xld.WALStart > clientXLogPos {
 				clientXLogPos = xld.WALStart

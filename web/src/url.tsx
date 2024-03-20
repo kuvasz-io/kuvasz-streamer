@@ -33,6 +33,7 @@ export const UrlList = () => (
             <TextField source="sid" label="SID"/>
             <TextField source="url" label="URL"/>
             <BooleanField source='up' label="Status" FalseIcon={WarningIcon}/>
+            <TextField source="error" label="Error"/>
         </Datagrid>
     </List>
 );

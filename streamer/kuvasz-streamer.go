@@ -29,6 +29,7 @@ var (
 	dbmap              DBMap
 	destTables         PGTables
 	ConfigDB           *sql.DB
+	URLError           = make(map[string]string)
 
 	//go:embed migrations/*.sql
 	embedMigrations embed.FS
@@ -100,9 +101,9 @@ func main() {
 	// Loop through config and replicate databases
 	log.Info("Start processing source databases")
 	for _, database := range dbmap {
-		for _, url := range database.Urls {
+		for i, url := range database.Urls {
 			log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "sid", url.SID)
-			go DoReplicateDatabase(database, url)
+			go DoReplicateDatabase(database, &database.Urls[i])
 		}
 	}
 	// Start API Server

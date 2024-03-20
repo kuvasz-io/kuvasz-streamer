@@ -70,7 +70,6 @@ export const MapList = () => (
             <BooleanField    source="replicated" sortable={false}/>
             <BooleanField    source="present" sortable={false}/>
             <CloneButton />
-            <RefreshButton/>
         </Datagrid>
     </List>
 );
