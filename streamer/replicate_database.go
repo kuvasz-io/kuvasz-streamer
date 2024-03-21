@@ -155,10 +155,40 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 		return fmt.Errorf("wal_level must be logical, got %s, change configuration in postgresql.conf and restart server", walLevel)
 	}
 
-	// Check existing replication slot and existing consumer
+	// Check existing publication and create if needed, drop replication slot if required
 	slotName := "kuvasz_" + dbName
 	slotName = strings.ReplaceAll(slotName, "-", "_")
-
+	var publication, slot int
+	err = conn.QueryRow(context.Background(), `with publication as (
+							select count(*) as publication 
+							from pg_publication 
+							where pubname=$1), 
+						slot as (select count(*) as slot 
+							from pg_replication_slots 
+							where slot_name=$1) 
+						select publication.publication, slot.slot from publication,slot;`, slotName).Scan(&publication, &slot)
+	if err != nil {
+		return fmt.Errorf("cannot check publication and slot, error=%w", err)
+	}
+	// Check existing replication slot and existing consumer
+	if !(publication == 1 && slot == 1) { // publication and slot need to be corrected
+		if publication == 0 && slot == 1 { //slot without publication, drop it
+			_, err = conn.Exec(context.Background(), `select pg_drop_replication_slot($1)`, slotName)
+			if err != nil {
+				return fmt.Errorf("cannot drop replication slot, error=%w", err)
+			}
+		}
+		if publication == 1 && slot == 0 { // publication may have been created by mistake, remote it
+			_, err = conn.Exec(context.Background(), "drop publication "+slotName)
+			if err != nil {
+				return fmt.Errorf("cannot drop publication, error=%w", err)
+			}
+		}
+		_, err = conn.Exec(context.Background(), "create publication "+slotName+" for all tables")
+		if err != nil {
+			return fmt.Errorf("cannot create publication, error=%w", err)
+		}
+	}
 	// Create slot if it does not exist, fail if there is an existing consumer
 	oldSlot, lsn, err := createReplicationSlot(log, conn, slotName, sysident.XLogPos)
 	if err != nil {

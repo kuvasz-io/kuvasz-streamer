@@ -30,16 +30,8 @@ const CloneButton = () => {
     const refresh = useRefresh();
 
     const { mutate, isLoading } = useMutation(
-        () => dataProvider.create('tbl', { 
-            data: { 
-                db_id: record.db_id, 
-                name: record.name, 
-                type: 'clone', 
-                target: record.name
-            }
-        }
-    ).then(() => refresh()));
-    if (record.type == '' && record.present) {
+        () => dataProvider.cloneTable(record.id).then(() => refresh()));
+    if (!record.replicated) {
         return <Button 
                 label="Clone" 
                 onClick={() => mutate()}

@@ -10,8 +10,12 @@ export const baseDataProvider = simpleRestProvider(
 
 export const dataProvider = {
   ...baseDataProvider,
-  urlTables: (urlId) => {
-      return fetch(`/api/url/${urlId}/tables`, { method: 'GET' })
+  createTable: (mapId) => {
+      return fetch(`/api/map/${mapId}/create`, { method: 'POST' })
           .then(response => response.json());
+  },
+  cloneTable: (mapId) => {
+    return fetch(`/api/map/${mapId}/clone`, { method: 'POST' })
+        .then(response => response.json());
   },
 }

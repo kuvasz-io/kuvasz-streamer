@@ -247,6 +247,9 @@ func StartAPI(log *slog.Logger) {
 	// Add app handlers
 	router.HandleFunc("/api/map", MapGetManyHandler).Methods("GET")
 	router.HandleFunc("/api/map/{id}", MapGetOneHandler).Methods("GET")
+	router.HandleFunc("/api/map/{id}/create", MapCreateTableHandler).Methods("POST")
+	router.HandleFunc("/api/map/{id}/clone", MapCloneTableHandler).Methods("POST")
+	router.HandleFunc("/api/map/refresh", MapRefreshHandler).Methods("POST")
 
 	router.HandleFunc("/api/db/{id}", dbGetOneHandler).Methods("GET")
 	router.HandleFunc("/api/db", dbGetManyHandler).Methods("GET")

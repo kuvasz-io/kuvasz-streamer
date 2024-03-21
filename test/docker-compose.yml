@@ -49,3 +49,11 @@ services:
       POSTGRES_PASSWORD: postgres
     ports:
       - 6011:5432
+  freshpg:
+    image: postgres:12
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 6010:5432

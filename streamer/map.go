@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"regexp"
 	"sort"
 
+	"github.com/jackc/pgx/v5"
 	_ "github.com/mattn/go-sqlite3"
 	"gopkg.in/yaml.v2"
 )
@@ -46,6 +48,8 @@ type mappingEntry struct {
 	PartitionsRegex *string `json:"partitions_regex"`
 	Replicated      bool    `json:"replicated"`
 	Present         bool    `json:"present"`
+	SourceColumns   PGTable `json:"source_columns"`
+	DestColumns     PGTable `json:"dest_columns"`
 }
 
 type mappingTable []mappingEntry
@@ -192,6 +196,41 @@ func FindSourceTable(relationName string, sourceTables map[string]SourceTable) s
 	return ""
 }
 
+func findConfiguredTable(m DBMap, dbID int64, name string) SourceTable {
+	var t = SourceTable{}
+	for _, db := range m {
+		if db.ID != dbID {
+			continue
+		}
+		t = db.Tables[name]
+		return t
+	}
+	return t
+}
+
+func getSourceTables(log *slog.Logger, s SourceDatabase) (PGTables, error) {
+	if len(s.Urls) == 0 {
+		return PGTables{}, nil
+	}
+	u := s.Urls[0]
+	log = log.With("url", u)
+	parsedConfig, err := pgx.ParseConfig(u.URL)
+	if err != nil {
+		return PGTables{}, fmt.Errorf("error parsing database url=%s, error=%s", u.URL, err)
+	}
+	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+	conn, err := pgx.ConnectConfig(context.Background(), parsedConfig)
+	if err != nil {
+		return PGTables{}, fmt.Errorf("error connecting to database=%s, error=%s", u.URL, err)
+	}
+	defer conn.Close(context.Background())
+	sourceTables, err := GetTables(log, conn, "public")
+	if err != nil {
+		return PGTables{}, fmt.Errorf("error getting tables, error=%s", err)
+	}
+	return sourceTables, nil
+}
+
 func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (*SourceTable, string, error) {
 	var destTable string
 	sourceTable := FindSourceTable(relationName, sourceTables)
@@ -232,7 +271,6 @@ func RefreshMappingTable() error {
 
 	// Step 3. Loop over provided URLs, get source tables and merge
 	var result mappingTable
-	var i int64 = 0
 
 	for _, db := range configuredMap {
 		sourceTables, err := getSourceTables(log, db)
@@ -247,7 +285,6 @@ func RefreshMappingTable() error {
 		for k := range sourceTables {
 			configuredTable := findConfiguredTable(configuredMap, db.ID, k)
 			t := mappingEntry{
-				ID:              i,
 				DBId:            db.ID,
 				DBName:          db.Name,
 				SID:             db.Urls[0].SID,
@@ -256,20 +293,24 @@ func RefreshMappingTable() error {
 				Target:          configuredTable.Target,
 				PartitionsRegex: &configuredTable.PartitionsRegex,
 				Replicated:      (configuredTable.Type != ""),
+				SourceColumns:   sourceTables[k],
 			}
 			destName := configuredTable.Target
 			if destName == "" {
 				destName = k
 			}
-			_, ok := destinationTables[destName]
+			d, ok := destinationTables[destName]
 			if t.Type != "" || ok {
 				t.Present = true
+				t.DestColumns = d
 			}
 			result = append(result, t)
-			i++
 		}
 	}
 	sort.Sort(result)
+	for i := range result {
+		result[i].ID = int64(i)
+	}
 	MappingTable = result
 	log.Debug("Refreshed mapping table", "count", len(MappingTable))
 	return nil
