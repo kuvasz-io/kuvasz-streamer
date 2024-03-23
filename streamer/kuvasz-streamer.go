@@ -90,6 +90,12 @@ func main() {
 			log.Error("Can't read config database, error=%w", err)
 			os.Exit(1)
 		}
+		err = RefreshMappingTable()
+		if err != nil {
+			log.Error("Can't refresh mapping table, error=%w", err)
+			os.Exit(1)
+		}
+		log.Info("Mapping table refreshed")
 	} else {
 		ReadMapFile(config.App.MapFile)
 	}

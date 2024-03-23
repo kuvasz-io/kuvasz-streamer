@@ -15,6 +15,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Partitions map[string][]string
+
 func pluginArguments(pgVersion int, slotName string) (int, []string) {
 	protocolVersion := 2
 	arg := make([]string, 0, 10)
@@ -106,6 +108,27 @@ func DoReplicateDatabase(database SourceDatabase, url *SourceURL) {
 	}
 }
 
+func makePublication(database SourceDatabase) string {
+	if len(database.Tables) == 0 {
+		return ""
+	}
+	p := " for table "
+	for i := range MappingTable {
+		if MappingTable[i].DBName != database.Name {
+			continue
+		}
+		// if this is a partitioned table, add all partitions
+		if len(MappingTable[i].Partitions) > 0 {
+			for j := range MappingTable[i].Partitions {
+				p = p + MappingTable[i].Partitions[j] + ", "
+			}
+		} else {
+			p = p + MappingTable[i].Name + ", "
+		}
+	}
+	return p[0 : len(p)-2]
+}
+
 //nolint:funlen,gocognit // This is is just multiple steps and needs to be in a single function
 func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 	// Connect to selected source database
@@ -178,13 +201,15 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 				return fmt.Errorf("cannot drop replication slot, error=%w", err)
 			}
 		}
-		if publication == 1 && slot == 0 { // publication may have been created by mistake, remote it
+		if publication == 1 && slot == 0 { // publication may have been created by mistake, remove it
 			_, err = conn.Exec(context.Background(), "drop publication "+slotName)
 			if err != nil {
 				return fmt.Errorf("cannot drop publication, error=%w", err)
 			}
 		}
-		_, err = conn.Exec(context.Background(), "create publication "+slotName+" for all tables")
+		q := "create publication " + slotName + makePublication(database)
+		log.Debug("Creating publication", "publication", slotName, "q", q)
+		_, err = conn.Exec(context.Background(), q)
 		if err != nil {
 			return fmt.Errorf("cannot create publication, error=%w", err)
 		}

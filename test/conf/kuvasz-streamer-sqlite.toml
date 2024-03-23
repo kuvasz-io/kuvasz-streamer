@@ -15,7 +15,7 @@ start_delay = 5
 [logs]
 output="console"
 level="debug"
-format="text"
+format="console"
 source=false
 
 [database]

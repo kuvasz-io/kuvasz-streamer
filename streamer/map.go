@@ -24,9 +24,10 @@ type (
 		Tables map[string]SourceTable `yaml:"tables"   json:"tables"`
 	}
 	SourceURL struct {
-		ID  int64  `json:"url_id"`
-		URL string `yaml:"url"     json:"url"`
-		SID string `yaml:"sid"     json:"sid"`
+		ID      int64  `json:"url_id"`
+		URL     string `yaml:"url"     json:"url"`
+		SID     string `yaml:"sid"     json:"sid"`
+		Version int    `json:"version"`
 	}
 	SourceTable struct {
 		ID              int64  `json:"tbl_id"`
@@ -38,18 +39,18 @@ type (
 )
 
 type mappingEntry struct {
-	ID              int64   `json:"id"`
-	DBId            int64   `json:"db_id"`
-	DBName          string  `json:"db_name"`
-	SID             string  `json:"sid"`
-	Name            string  `json:"name"`
-	Type            string  `json:"type"`
-	Target          string  `json:"target"`
-	PartitionsRegex *string `json:"partitions_regex"`
-	Replicated      bool    `json:"replicated"`
-	Present         bool    `json:"present"`
-	SourceColumns   PGTable `json:"source_columns"`
-	DestColumns     PGTable `json:"dest_columns"`
+	ID              int64               `json:"id"`
+	DBId            int64               `json:"db_id"`
+	DBName          string              `json:"db_name"`
+	Name            string              `json:"name"`
+	Type            string              `json:"type"`
+	Target          string              `json:"target"`
+	Partitions      []string            `json:"partitions"`
+	PartitionsRegex *string             `json:"partitions_regex"`
+	Replicated      bool                `json:"replicated"`
+	Present         bool                `json:"present"`
+	SourceColumns   map[string]PGColumn `json:"source_columns"`
+	DestColumns     map[string]PGColumn `json:"dest_columns"`
 }
 
 type mappingTable []mappingEntry
@@ -287,13 +288,13 @@ func RefreshMappingTable() error {
 			t := mappingEntry{
 				DBId:            db.ID,
 				DBName:          db.Name,
-				SID:             db.Urls[0].SID,
 				Name:            k,
 				Type:            configuredTable.Type,
 				Target:          configuredTable.Target,
+				Partitions:      sourceTables[k].Partitions,
 				PartitionsRegex: &configuredTable.PartitionsRegex,
 				Replicated:      (configuredTable.Type != ""),
-				SourceColumns:   sourceTables[k],
+				SourceColumns:   sourceTables[k].Columns,
 			}
 			destName := configuredTable.Target
 			if destName == "" {
@@ -302,7 +303,7 @@ func RefreshMappingTable() error {
 			d, ok := destinationTables[destName]
 			if t.Type != "" || ok {
 				t.Present = true
-				t.DestColumns = d
+				t.DestColumns = d.Columns
 			}
 			result = append(result, t)
 		}

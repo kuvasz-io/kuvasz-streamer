@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"os"
 	"strings"
+
+	"github.com/lmittmann/tint"
 )
 
 type (
@@ -58,6 +60,7 @@ func parseLevel(level string) (slog.Level, error) {
 
 func SetupLogs(config LogsConfig) {
 	var l slog.Level
+	var h slog.Handler
 	var err error
 
 	if l, err = parseLevel(config.Level); err != nil {
@@ -65,13 +68,21 @@ func SetupLogs(config LogsConfig) {
 		fmt.Printf("Can't read log level, defaulting to debug\n")
 	}
 	level = new(slog.LevelVar)
-	options := slog.HandlerOptions{
-		AddSource:   config.Source,
-		Level:       level,
-		ReplaceAttr: nil,
+	if config.Format == "console" {
+		options := tint.Options{
+			Level:      level,
+			TimeFormat: "15:04:05.000",
+		}
+		h = tint.NewHandler(os.Stdout, &options)
+	} else {
+		options := slog.HandlerOptions{
+			AddSource:   config.Source,
+			Level:       level,
+			ReplaceAttr: nil,
+		}
+		h = slog.NewTextHandler(os.Stdout, &options)
 	}
-	handler := slog.NewTextHandler(os.Stdout, &options)
-	log = slog.New(handler)
+	log = slog.New(h)
 	level.Set(l)
 }
 
