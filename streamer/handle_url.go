@@ -61,7 +61,6 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
 	rows, err := ConfigDB.Query(query)
 	if err != nil {
-		log.Error("Cannot read url list", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read url list", err)
 		return
 	}
@@ -70,13 +69,15 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 		var item URL
 		err := rows.Scan(&item.ID, &item.DBId, &item.DBName, &item.SID, &item.URL)
 		if err != nil {
-			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
 			return
 		}
 		item.Up = getStatus(item.DBName, item.SID)
 		item.Error = URLError[item.URL]
 		urls = append(urls, item)
+	}
+	if err = rows.Err(); err != nil {
+		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
 	}
 	req.ReturnOK(w, r, urls, len(urls))
 }
@@ -100,12 +101,13 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Creating db", "item", item)
 	// err = app.Validate.Struct(item)
 
-	err = ConfigDB.QueryRow(
-		`INSERT INTO url(db_id, sid, url) VALUES (?, ?, ?) RETURNING url_id`, item.DBId, item.SID, item.URL).Scan(&item.ID)
+	result, err := ConfigDB.Exec(
+		`INSERT INTO url(db_id, sid, url) VALUES (?, ?, ?)`, item.DBId, item.SID, item.URL)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
 	}
+	item.ID, _ = result.LastInsertId()
 	req.ReturnOK(w, r, item, 1)
 }
 

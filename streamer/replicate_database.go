@@ -102,13 +102,14 @@ func pgVersion(log *slog.Logger, conn *pgx.Conn) (int, error) {
 func DoReplicateDatabase(database SourceDatabase, url *SourceURL) {
 	for {
 		err := ReplicateDatabase(database, url)
-		log.Error(err.Error(), "db-sid", database.Name+"_"+url.SID, "url", url.URL)
+		log.Error("cannot start replication", "error", err, "db-sid", database.Name+"_"+url.SID, "url", url.URL)
 		URLError[url.URL] = err.Error()
 		time.Sleep(60 * time.Second)
 	}
 }
 
 func makePublication(database SourceDatabase) string {
+	log.Debug("Creating publication", "database", database, "MappingTable", MappingTable)
 	if len(database.Tables) == 0 {
 		return ""
 	}
@@ -195,7 +196,7 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 	}
 	// Check existing replication slot and existing consumer
 	if !(publication == 1 && slot == 1) { // publication and slot need to be corrected
-		if publication == 0 && slot == 1 { //slot without publication, drop it
+		if publication == 0 && slot == 1 { // slot without publication, drop it
 			_, err = conn.Exec(context.Background(), `select pg_drop_replication_slot($1)`, slotName)
 			if err != nil {
 				return fmt.Errorf("cannot drop replication slot, error=%w", err)
@@ -222,7 +223,7 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 
 	// Perform full table sync if slot was just created
 	if !oldSlot {
-		err := syncAllTables(log, dbName, url.SID, database.Tables, replConn)
+		err := syncAllTables(log, url.SID, database.Tables, replConn)
 		if err != nil {
 			return fmt.Errorf("cannot perform initial sync, error=%w", err)
 		}

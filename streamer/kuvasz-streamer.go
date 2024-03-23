@@ -78,27 +78,7 @@ func main() {
 	}
 	conn.Release()
 
-	if config.App.MapDatabase != "" {
-		ConfigDB, err = sql.Open("sqlite3", config.App.MapDatabase)
-		if err != nil {
-			log.Error("Can't open map database", "database", config.App.MapFile, "error", err)
-			os.Exit(1)
-		}
-		Migrate(embedMigrations, "migrations", ConfigDB)
-		dbmap, err = ReadMapDatabase(ConfigDB)
-		if err != nil {
-			log.Error("Can't read config database, error=%w", err)
-			os.Exit(1)
-		}
-		err = RefreshMappingTable()
-		if err != nil {
-			log.Error("Can't refresh mapping table, error=%w", err)
-			os.Exit(1)
-		}
-		log.Info("Mapping table refreshed")
-	} else {
-		ReadMapFile(config.App.MapFile)
-	}
+	ReadMap()
 	CompileRegexes()
 
 	// Start destination processing worker routines

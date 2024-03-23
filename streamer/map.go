@@ -19,26 +19,26 @@ type (
 	DBMap          []SourceDatabase
 	SourceDatabase struct {
 		ID     int64                  `json:"db_id"`
-		Name   string                 `yaml:"database" json:"database"`
-		Urls   []SourceURL            `yaml:"urls"     json:"urls"`
-		Tables map[string]SourceTable `yaml:"tables"   json:"tables"`
+		Name   string                 `json:"database" yaml:"database"`
+		Urls   []SourceURL            `json:"urls"     yaml:"urls"`
+		Tables map[string]SourceTable `json:"tables"   yaml:"tables"`
 	}
 	SourceURL struct {
 		ID      int64  `json:"url_id"`
-		URL     string `yaml:"url"     json:"url"`
-		SID     string `yaml:"sid"     json:"sid"`
+		URL     string `json:"url"     yaml:"url"`
+		SID     string `json:"sid"     yaml:"sid"`
 		Version int    `json:"version"`
 	}
 	SourceTable struct {
 		ID              int64  `json:"tbl_id"`
-		Type            string `yaml:"type,omitempty"             json:"type"`
-		Target          string `yaml:"target,omitempty"           json:"target"`
-		PartitionsRegex string `yaml:"partitions_regex,omitempty" json:"partitions_regex"`
+		Type            string `json:"type"             yaml:"type,omitempty"`
+		Target          string `json:"target"           yaml:"target,omitempty"`
+		PartitionsRegex string `json:"partitions_regex" yaml:"partitions_regex,omitempty"`
 		compiledRegex   *regexp.Regexp
 	}
 )
 
-type mappingEntry struct {
+type MappingEntry struct {
 	ID              int64               `json:"id"`
 	DBId            int64               `json:"db_id"`
 	DBName          string              `json:"db_name"`
@@ -53,7 +53,7 @@ type mappingEntry struct {
 	DestColumns     map[string]PGColumn `json:"dest_columns"`
 }
 
-type mappingTable []mappingEntry
+type mappingTable []MappingEntry
 
 func (m mappingTable) Len() int { return len(m) }
 func (m mappingTable) Less(i, j int) bool {
@@ -162,6 +162,34 @@ func ReadMapFile(filename string) {
 	log.Info("Fixed map file", "map", dbmap)
 }
 
+func ReadMap() {
+	if config.App.MapDatabase != "" {
+		ConfigDB, err = sql.Open("sqlite3", config.App.MapDatabase)
+		if err != nil {
+			log.Error("Can't open map database", "database", config.App.MapFile, "error", err)
+			os.Exit(1)
+		}
+		Migrate(embedMigrations, "migrations", ConfigDB)
+		dbmap, err = ReadMapDatabase(ConfigDB)
+		if err != nil {
+			log.Error("Can't read config database, error=%w", err)
+			os.Exit(1)
+		}
+		err = RefreshMappingTable()
+		if err != nil {
+			log.Error("Can't refresh mapping table, error=%w", err)
+			os.Exit(1)
+		}
+	} else {
+		ReadMapFile(config.App.MapFile)
+		err = RefreshMappingTable()
+		if err != nil {
+			log.Error("Can't refresh mapping table, error=%w", err)
+			os.Exit(1)
+		}
+	}
+}
+
 func CompileRegexes() {
 	log.Debug("Compiling partition regexes")
 	for _, db := range dbmap {
@@ -217,17 +245,17 @@ func getSourceTables(log *slog.Logger, s SourceDatabase) (PGTables, error) {
 	log = log.With("url", u)
 	parsedConfig, err := pgx.ParseConfig(u.URL)
 	if err != nil {
-		return PGTables{}, fmt.Errorf("error parsing database url=%s, error=%s", u.URL, err)
+		return PGTables{}, fmt.Errorf("error parsing database url=%s, error=%w", u.URL, err)
 	}
 	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 	conn, err := pgx.ConnectConfig(context.Background(), parsedConfig)
 	if err != nil {
-		return PGTables{}, fmt.Errorf("error connecting to database=%s, error=%s", u.URL, err)
+		return PGTables{}, fmt.Errorf("error connecting to database=%s, error=%w", u.URL, err)
 	}
 	defer conn.Close(context.Background())
 	sourceTables, err := GetTables(log, conn, "public")
 	if err != nil {
-		return PGTables{}, fmt.Errorf("error getting tables, error=%s", err)
+		return PGTables{}, fmt.Errorf("error getting tables, error=%w", err)
 	}
 	return sourceTables, nil
 }
@@ -265,9 +293,14 @@ func RefreshMappingTable() error {
 	}
 
 	// Step 2. Get configured database map
-	configuredMap, err := ReadMapDatabase(ConfigDB)
-	if err != nil {
-		return fmt.Errorf("can't read database map, error=%w", err)
+	var configuredMap DBMap
+	if config.App.MapDatabase != "" {
+		configuredMap, err = ReadMapDatabase(ConfigDB)
+		if err != nil {
+			return fmt.Errorf("can't read database map, error=%w", err)
+		}
+	} else {
+		configuredMap = dbmap
 	}
 
 	// Step 3. Loop over provided URLs, get source tables and merge
@@ -285,7 +318,7 @@ func RefreshMappingTable() error {
 		}
 		for k := range sourceTables {
 			configuredTable := findConfiguredTable(configuredMap, db.ID, k)
-			t := mappingEntry{
+			t := MappingEntry{
 				DBId:            db.ID,
 				DBName:          db.Name,
 				Name:            k,
@@ -317,11 +350,11 @@ func RefreshMappingTable() error {
 	return nil
 }
 
-func FindTableByID(id int64) mappingEntry {
+func FindTableByID(id int64) MappingEntry {
 	for i := range MappingTable {
 		if MappingTable[i].ID == id {
 			return MappingTable[i]
 		}
 	}
-	return mappingEntry{}
+	return MappingEntry{}
 }

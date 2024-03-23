@@ -35,7 +35,7 @@ func (op operation) buildSetList(tableName string, args []arg, values map[string
 	return args, nil
 }
 
-func (op operation) buildWhere( //nolint:gocognit  // ignore complexity linter
+func (op operation) buildWhere(
 	tableName string,
 	relation PGRelation,
 	values map[string]any,

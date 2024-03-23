@@ -73,7 +73,7 @@ func getValues(rel PGRelation, columns []*pglogrepl.TupleDataColumn, typeMap *pg
 	return values
 }
 
-//nolint:funlen,gocognit,gocyclo,cyclop // It's OK for this to be long.
+//nolint:funlen,gocognit,cyclop // It's OK for this to be long.
 func processMessage(
 	log *slog.Logger,
 	database SourceDatabase,
@@ -188,7 +188,7 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err := MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
 			log.Error(err.Error())
 			return
@@ -227,9 +227,9 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err := MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("cannot map source table", "error", err.Error())
 			return
 		}
 		if sourceTable.Type == TableTypeAppend {

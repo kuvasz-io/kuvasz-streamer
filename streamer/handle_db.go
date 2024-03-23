@@ -23,14 +23,12 @@ func dbGetOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := ExtractID(r)
 	if err != nil {
-		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
 		return
 	}
 
 	err = ConfigDB.QueryRow(`SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.ID, &item.Name)
 	if err != nil {
-		log.Error("Cannot read database schema", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read database schema list", err)
 		return
 	}
@@ -47,7 +45,6 @@ func dbGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
 	rows, err := ConfigDB.Query(query)
 	if err != nil {
-		log.Error("Cannot read database schema list", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read database schema list", err)
 		return
 	}
@@ -56,11 +53,13 @@ func dbGetManyHandler(w http.ResponseWriter, r *http.Request) {
 		var item db
 		err := rows.Scan(&item.ID, &item.Name)
 		if err != nil {
-			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
 			return
 		}
 		dbs = append(dbs, item)
+	}
+	if err = rows.Err(); err != nil {
+		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan database item", err)
 	}
 	req.ReturnOK(w, r, dbs, len(dbs))
 }
@@ -84,12 +83,14 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Creating db", "item", item)
 	// err = app.Validate.Struct(item)
 
-	err = ConfigDB.QueryRow(
-		`INSERT INTO db(name) VALUES (?) RETURNING db_id`, item.Name).Scan(&item.ID)
+	result, err := ConfigDB.Exec(
+		`INSERT INTO db(name) VALUES (?)`, item.Name)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
 	}
+	item.ID, _ = result.LastInsertId()
+	log.Debug("Created db", "item", item)
 	req.ReturnOK(w, r, item, 1)
 }
 

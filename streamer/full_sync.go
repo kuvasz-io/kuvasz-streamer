@@ -63,7 +63,6 @@ func writeDestination(log *slog.Logger, tableName string, columns string, s *syn
 }
 
 func syncTable(log *slog.Logger,
-	db string,
 	sid string,
 	sourceTableName string,
 	destTableName string,
@@ -105,23 +104,30 @@ func syncTable(log *slog.Logger,
 		log.Error("cannot read source table", "error", err)
 		return fmt.Errorf("cannot perform full sync, error reading source=%s, dest=%s, error=%w", sourceTableName, destTableName, err)
 	}
-	log.Info("Finished full sync", "tag", tag, "duration", time.Since(t0), "size", size, "throughput", (float64(size) / (time.Since(t0).Seconds()) / 1024 / 1024))
+	log.Info("Finished full sync",
+		"tag", tag,
+		"duration", time.Since(t0), "size",
+		size, "throughput",
+		(float64(size) / (time.Since(t0).Seconds()) / 1024 / 1024))
 
 	// Stop writer
 	commandChannel <- "stop"
 	return nil
 }
 
-func syncAllTables(log *slog.Logger, db string, sid string, sourceTables map[string]SourceTable, sourceConnection *pgconn.PgConn) error {
+func syncAllTables(
+	log *slog.Logger,
+	sid string,
+	sourceTables map[string]SourceTable,
+	sourceConnection *pgconn.PgConn) error {
 	log.Debug("Sync all tables", "sourceTables", sourceTables)
 	for sourceTableName := range sourceTables {
 		_, destTableName, err := MapSourceTable(sourceTableName, sourceTables)
 		if err != nil {
-			log.Error(err.Error())
 			return err
 		}
 		log.Debug("Syncing", "sourceTable", sourceTableName, "destTable", destTableName)
-		_ = syncTable(log, db, sid, sourceTableName, destTableName, sourceConnection)
+		_ = syncTable(log, sid, sourceTableName, destTableName, sourceConnection)
 	}
 	return nil
 }

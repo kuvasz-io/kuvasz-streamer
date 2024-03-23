@@ -31,7 +31,6 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	id, err := ExtractID(r)
 	if err != nil {
-		log.Error("invalid id")
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
 		return
 	}
@@ -42,7 +41,6 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		WHERE tbl_id = ?`,
 		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 	if err != nil {
-		log.Error("Cannot read tbl", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
 		return
 	}
@@ -62,7 +60,6 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
 	rows, err := ConfigDB.Query(query)
 	if err != nil {
-		log.Error("Cannot read database schema list", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl list", err)
 		return
 	}
@@ -71,12 +68,15 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 		var item tbl
 		err := rows.Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 		if err != nil {
-			log.Error("Cannot scan item", "error", err)
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
 			return
 		}
 		tbls = append(tbls, item)
 	}
+	if err = rows.Err(); err != nil {
+		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan tbl item", err)
+	}
+
 	req.ReturnOK(w, r, tbls, len(tbls))
 }
 
@@ -99,13 +99,15 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Creating tbl", "item", item)
 	// err = app.Validate.Struct(item)
 
-	err = ConfigDB.QueryRow(
-		`INSERT INTO tbl(db_id, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?) RETURNING tbl_id`,
-		item.DBId, item.Name, item.Type, item.Target, item.PartitionsRegex).Scan(&item.ID)
+	result, err := ConfigDB.Exec(
+		`INSERT INTO tbl(db_id, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?)`,
+		item.DBId, item.Name, item.Type, item.Target, item.PartitionsRegex)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
 	}
+	item.ID, _ = result.LastInsertId()
+	log.Debug("Created tbl", "item", item)
 	req.ReturnOK(w, r, item, 1)
 }
 

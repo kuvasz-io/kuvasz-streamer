@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -48,7 +49,7 @@ var (
 func (r *requestRecord) Write(p []byte) (int, error) {
 	written, err := r.ResponseWriter.Write(p)
 	r.responseBytes += int64(written)
-	return written, err
+	return written, fmt.Errorf("error writing response: %w", err)
 }
 
 func (r *requestRecord) WriteHeader(status int) {
@@ -61,8 +62,8 @@ func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	log.Info("ReqNotFound",
 		"method", r.Method,
 		"uri", r.RequestURI,
-		"remote_addr", r.RemoteAddr,
-		"content_length", r.ContentLength,
+		"remoteAddr", r.RemoteAddr,
+		"contentLength", r.ContentLength,
 		"headers", r.Header,
 	)
 	origin := r.Header.Get("Origin")
@@ -77,29 +78,34 @@ func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 func ExtractID(r *http.Request) (int64, error) {
 	id, ok := mux.Vars(r)["id"]
 	if !ok {
-		return 0, fmt.Errorf("missing id")
+		return 0, errors.New("missing id")
 	}
 	i, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("invalid id: %w", err)
 	}
 	return i, nil
 }
 
-func PrepareReq(w http.ResponseWriter, r *http.Request) (req Request) {
+func PrepareReq(w http.ResponseWriter, r *http.Request) Request {
 	// set default output type, can be overridden
 	w.Header().Set("Content-Type", "application/json")
 
-	log.Debug("Handling request", "req", req)
-	return req
+	return Request{
+		Logger: log.With("url", r.RequestURI),
+		User:   "admin",
+	}
 }
 
 func (req Request) ReturnError(w http.ResponseWriter, status int, code string, message string, err error) {
+	log := req.Logger
+
 	w.WriteHeader(status)
+	log.Error("request error", "status", status, "code", code, "message", message, "error", err)
 	apiError := ErrorMessage{Code: code, Error: message, Info: err.Error()}
 	jsonAPIError, err := json.Marshal(apiError)
 	if err != nil {
-		req.Logger.Error("can't marshal error message", "message", apiError, "error", err)
+		log.Error("can't marshal error message", "message", apiError, "error", err)
 	}
 	fmt.Fprint(w, string(jsonAPIError))
 }
@@ -109,6 +115,7 @@ func (req Request) ReturnNotFound(w http.ResponseWriter) {
 }
 
 func (req Request) ReturnSuccess(w http.ResponseWriter, _ *http.Request, code int, body any, count int) {
+	log := req.Logger
 	log.Debug("Handling success", "body", body)
 	// No response body
 	if body == nil {
@@ -116,7 +123,7 @@ func (req Request) ReturnSuccess(w http.ResponseWriter, _ *http.Request, code in
 		return
 	}
 
-	w.Header().Set("X-Total-Count", fmt.Sprint(count))
+	w.Header().Set("X-Total-Count", strconv.Itoa(count))
 
 	// Convert response to JSON
 	jsonBody, err := json.Marshal(body)
@@ -154,7 +161,7 @@ func CORSHandler(w http.ResponseWriter, r *http.Request) {
 	log := log.With("handler", "CORS")
 
 	origin := r.Header.Get("Origin")
-	log.Info("CORS Handler", "Origin", origin)
+	log.Info("CORS Handler", "origin", origin)
 	if !contains(origin, config.Cors.AllowedOrigins) && config.Cors.AllowedOrigins[0] != "*" {
 		log.Error("origin is not in the list of allowed origins", "origin", origin, "list", config.Cors.AllowedOrigins)
 		req.ReturnError(w, 400, "origin_not_allowed", "", nil)
@@ -166,7 +173,7 @@ func CORSHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
 	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
 	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
-	w.WriteHeader(200)
+	w.WriteHeader(http.StatusOK)
 }
 
 func CORSMiddleware(next http.Handler) http.Handler {

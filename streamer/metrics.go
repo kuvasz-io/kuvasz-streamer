@@ -27,13 +27,13 @@ var (
 
 	syncRowsTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "streamer_sync_total_rows",
+			Name: "streamer_sync_rows_total",
 			Help: "Total number of rows synced.",
 		}, []string{"database", "sid", "table"},
 	)
 	syncBytesTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "streamer_sync_total_bytes",
+			Name: "streamer_sync_bytes_total",
 			Help: "Total number of bytes synced.",
 		}, []string{"database", "sid", "table"},
 	)
@@ -57,7 +57,7 @@ func getMetricValue(col prometheus.Collector) float64 {
 	col.Collect(c)                       // collect current metric value into the channel
 	m := dto.Metric{}
 	_ = (<-c).Write(&m) // read metric value from the channel
-	return *m.Gauge.Value
+	return m.GetGauge().GetValue()
 }
 
 func getStatus(database string, sid string) bool {

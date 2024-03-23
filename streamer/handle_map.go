@@ -32,7 +32,6 @@ func MapGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("Got one map", "result", result)
 	req.ReturnOK(w, r, result, 1)
-
 }
 
 func MapGetManyHandler(w http.ResponseWriter, r *http.Request) {
@@ -58,7 +57,12 @@ func MapCreateTableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	t := MappingTable[id]
 	if t.Present {
-		req.ReturnError(w, http.StatusBadRequest, "conflict", "destination table already present", fmt.Errorf("destination table %s already present", t.Name))
+		req.ReturnError(
+			w,
+			http.StatusBadRequest,
+			"conflict",
+			"destination table already present",
+			fmt.Errorf("destination table %s already present", t.Name))
 		return
 	}
 	q := "CREATE TABLE " + t.Name + "(sid text"
