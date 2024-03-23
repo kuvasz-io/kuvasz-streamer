@@ -11,9 +11,9 @@ CONTAINER-LATEST   := ${REGISTRY}/${BINARY}:${CI_COMMIT_REF_NAME}
 LDFLAGS            += -X ${BINARY}.Version=${VERSION}
 LDFLAGS            += -X ${BINARY}.Build=${BUILD}
 
-all: check web build
+all: web check build
 
-check: 
+check:
 	staticcheck -checks=all ./...
 	go vet ./...
 	golangci-lint run
@@ -44,7 +44,7 @@ docs:
 	cp -r docs/_site/* /var/www/caddy/streamer
 
 clean:
-	rm -f ${BINARY}
+	rm -rf ${BINARY} streamer/admin web/dist dist
 
 .PHONY: check web build release rpmrepo aptrepo test docs clean
 

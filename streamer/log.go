@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/lmittmann/tint"
+	"github.com/mattn/go-isatty"
 )
 
 type (
@@ -68,20 +69,14 @@ func SetupLogs(config LogsConfig) {
 		fmt.Printf("Can't read log level, defaulting to debug\n")
 	}
 	level = new(slog.LevelVar)
-	if config.Format == "console" {
-		options := tint.Options{
-			Level:      level,
-			TimeFormat: "15:04:05.000",
-		}
-		h = tint.NewHandler(os.Stdout, &options)
-	} else {
-		options := slog.HandlerOptions{
-			AddSource:   config.Source,
-			Level:       level,
-			ReplaceAttr: nil,
-		}
-		h = slog.NewTextHandler(os.Stdout, &options)
+	// if config.Format == "text" {
+	options := tint.Options{
+		Level:      level,
+		TimeFormat: "15:04:05.000",
+		NoColor:    !isatty.IsTerminal(os.Stdout.Fd()),
 	}
+	h = tint.NewHandler(os.Stdout, &options)
+	// }
 	log = slog.New(h)
 	level.Set(l)
 }

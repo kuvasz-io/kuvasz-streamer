@@ -12,6 +12,9 @@ ExecStart=/usr/bin/kuvasz-streamer
 LimitNOFILE=10000
 Restart=always
 RestartSec=3
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=kuvasz-streamer
 
 [Install]
 WantedBy=multi-user.target

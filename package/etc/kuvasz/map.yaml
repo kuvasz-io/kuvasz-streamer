@@ -1,14 +1,6 @@
 - database: db1
   urls:
-  - url: postgres://kuvasz:kuvasz@127.0.0.1:5432/db1?replication=database&application_name=kuvasz_db1
-    sid: 12
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:5432/db1
+    sid: local
   tables:
-    t1:
-    t2:
-      target: rt2
-    t3:
-      type: append
-    t4:
-      type: archive
-    t5:
-    t6:
+    tbl1:
