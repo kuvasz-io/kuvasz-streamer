@@ -86,6 +86,7 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	var item URL
 	req := PrepareReq(w, r)
 
+	// Fetch and decode body
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Error("cannot read body: %v", err)
@@ -98,9 +99,9 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
 		return
 	}
-	log.Debug("Creating db", "item", item)
-	// err = app.Validate.Struct(item)
 
+	// Add entry
+	log.Debug("Creating db", "item", item)
 	result, err := ConfigDB.Exec(
 		`INSERT INTO url(db_id, sid, url) VALUES (?, ?, ?)`, item.DBId, item.SID, item.URL)
 	if err != nil {
@@ -108,6 +109,11 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	item.ID, _ = result.LastInsertId()
+	err = RefreshMappingTable()
+	if err != nil {
+		req.ReturnError(w, http.StatusInternalServerError, "0003", "cannot refresh mapping table", err)
+		return
+	}
 	req.ReturnOK(w, r, item, 1)
 }
 
@@ -175,4 +181,16 @@ func urlPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.ReturnOK(w, r, item, 1)
+}
+
+func urlPostRestartAllHandler(w http.ResponseWriter, r *http.Request) {
+	req := PrepareReq(w, r)
+	RootChannel <- "restart"
+
+	// for i := range dbmap {
+	// 	for j := range dbmap[i].Urls {
+	// 		dbmap[i].Urls[j].commandChannel <- "restart"
+	// 	}
+	// }
+	req.ReturnOK(w, r, nil, 0)
 }

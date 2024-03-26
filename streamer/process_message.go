@@ -73,7 +73,7 @@ func getValues(rel PGRelation, columns []*pglogrepl.TupleDataColumn, typeMap *pg
 	return values
 }
 
-//nolint:funlen,gocognit,cyclop // It's OK for this to be long.
+//nolint:funlen,gocognit,cyclop,gocyclo // It's OK for this to be long.
 func processMessage(
 	log *slog.Logger,
 	database SourceDatabase,

@@ -24,10 +24,11 @@ type (
 		Tables map[string]SourceTable `json:"tables"   yaml:"tables"`
 	}
 	SourceURL struct {
-		ID      int64  `json:"url_id"`
-		URL     string `json:"url"     yaml:"url"`
-		SID     string `json:"sid"     yaml:"sid"`
-		Version int    `json:"version"`
+		ID             int64  `json:"url_id"`
+		URL            string `json:"url"     yaml:"url"`
+		SID            string `json:"sid"     yaml:"sid"`
+		Version        int    `json:"version"`
+		commandChannel chan string
 	}
 	SourceTable struct {
 		ID              int64  `json:"tbl_id"`
@@ -118,10 +119,12 @@ func ReadMapDatabase(db *sql.DB) (DBMap, error) {
 }
 
 func ReadMapFile(filename string) {
+	var err error
+	var data []byte
+
 	// Read map
 	log := log.With("filename", filename)
 	log.Info("Reading map file")
-	var data []byte
 	data, err = os.ReadFile(filename)
 	if err != nil {
 		log.Error("Can't read map file", "error", err)
@@ -163,12 +166,9 @@ func ReadMapFile(filename string) {
 }
 
 func ReadMap() {
+	var err error
 	if config.App.MapDatabase != "" {
-		ConfigDB, err = sql.Open("sqlite3", config.App.MapDatabase)
-		if err != nil {
-			log.Error("Can't open map database", "database", config.App.MapFile, "error", err)
-			os.Exit(1)
-		}
+		SetupConfigDB()
 		Migrate(embedMigrations, "migrations", ConfigDB)
 		dbmap, err = ReadMapDatabase(ConfigDB)
 		if err != nil {
@@ -272,7 +272,7 @@ func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (*
 	} else {
 		destTable = t.Target
 	}
-	_, ok := destTables[destTable]
+	_, ok := DestTables[destTable]
 	if !ok {
 		return nil, "", fmt.Errorf("destination table does not exist, table=%s", destTable)
 	}

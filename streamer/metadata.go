@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type (
@@ -133,4 +135,36 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 	}
 	log.Debug("Assigned PK", "tables", pgTables)
 	return pgTables, nil
+}
+
+func SetupDestination() {
+	var err error
+
+	// Connect to target database
+	DestConnectionPool, err = pgxpool.New(context.Background(), config.Database.URL)
+	if err != nil {
+		log.Error("Can't connect to target database", "url", config.Database.URL, "error", err)
+		os.Exit(1)
+	}
+	log.Info("Connected to target database", "url", config.Database.URL)
+
+	// Get destination metadata
+	log.Info("Getting destination table metadata")
+	conn, err := DestConnectionPool.Acquire(context.Background())
+	if err != nil {
+		log.Error("Can't get destination table metadata", "error", err)
+		os.Exit(1)
+	}
+
+	DestTables, err = GetTables(log, conn.Conn(), "public")
+	if err != nil {
+		log.Error("Can't get destination table metadata", "error", err)
+		conn.Release()
+		os.Exit(1)
+	}
+	conn.Release()
+}
+
+func CloseDestination() {
+	DestConnectionPool.Close()
 }

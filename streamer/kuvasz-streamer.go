@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // suppress linter error
-	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/mattn/go-sqlite3"
@@ -24,12 +24,12 @@ var (
 	Package            string
 	Version            string
 	Build              string
-	DestConnectionPool *pgxpool.Pool
-	err                error
-	dbmap              DBMap
-	destTables         PGTables
 	ConfigDB           *sql.DB
+	DestConnectionPool *pgxpool.Pool
+	DestTables         PGTables
+	dbmap              DBMap
 	URLError           = make(map[string]string)
+	RootChannel        chan string
 
 	//go:embed migrations/*.sql
 	embedMigrations embed.FS
@@ -54,44 +54,34 @@ func main() {
 		}()
 	}
 
-	// Connect to target database
-	DestConnectionPool, err = pgxpool.New(context.Background(), config.Database.URL)
-	if err != nil {
-		log.Error("Can't connect to target database", "url", config.Database.URL, "error", err)
-		os.Exit(1)
-	}
-	log.Info("Connected to target database", "url", config.Database.URL)
-
-	// Get destination metadata
-	log.Info("Getting destination table metadata")
-	conn, err := DestConnectionPool.Acquire(context.Background())
-	if err != nil {
-		log.Error("Can't get destination table metadata", "error", err)
-		os.Exit(1)
-	}
-
-	destTables, err = GetTables(log, conn.Conn(), "public")
-	if err != nil {
-		log.Error("Can't get destination table metadata", "error", err)
-		conn.Release()
-		os.Exit(1)
-	}
-	conn.Release()
-
-	ReadMap()
-	CompileRegexes()
-
 	// Start destination processing worker routines
 	StartWorkers(config.App.NumWorkers)
 
-	// Loop through config and replicate databases
-	log.Info("Start processing source databases")
-	for _, database := range dbmap {
-		for i, url := range database.Urls {
-			log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "sid", url.SID)
-			go DoReplicateDatabase(database, &database.Urls[i])
-		}
-	}
 	// Start API Server
-	StartAPI(log)
+	go APIServer(log)
+
+	// Start main loop
+	RootChannel = make(chan string)
+	for {
+		SetupDestination()
+		ReadMap()
+		CompileRegexes()
+		// Create root context allowing cancellation of all goroutines
+		rootContext, rootCancel := context.WithCancel(context.Background())
+
+		// Loop through config and replicate databases
+		log.Info("Start processing source databases")
+		for _, database := range dbmap {
+			for i, url := range database.Urls {
+				log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "sid", url.SID)
+				go DoReplicateDatabase(rootContext, database, &database.Urls[i])
+			}
+		}
+		<-RootChannel
+		rootCancel()
+		// wait until all workers exit
+		time.Sleep(1 * time.Second)
+		CloseDestination()
+		CloseConfigDB()
+	}
 }

@@ -46,10 +46,10 @@ var (
 	}
 )
 
+//nolint:wrapcheck // whole function is a wrapper
 func (r *requestRecord) Write(p []byte) (int, error) {
-	written, err := r.ResponseWriter.Write(p)
-	r.responseBytes += int64(written)
-	return written, fmt.Errorf("error writing response: %w", err)
+	r.responseBytes += int64(len(p))
+	return r.ResponseWriter.Write(p)
 }
 
 func (r *requestRecord) WriteHeader(status int) {
@@ -234,16 +234,16 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func StartAPI(log *slog.Logger) {
+func APIServer(log *slog.Logger) {
 	// Set global logger
 	app.log = log.With("module", "api")
 
 	// Create HTTP Server
 	router := mux.NewRouter().StrictSlash(true)
 
-	// Add web admin and route by default
-	router.Path("/").Handler(http.RedirectHandler("/admin/", http.StatusSeeOther))
-	router.PathPrefix("/admin").Handler(http.FileServer(http.FS(webDist)))
+	// Add middlewares
+	router.Use(ObservabilityMiddleware)
+	router.Use(CORSMiddleware)
 
 	// Add utility handlers
 	router.Path("/metrics").Handler(promhttp.Handler())
@@ -269,6 +269,7 @@ func StartAPI(log *slog.Logger) {
 	router.HandleFunc("/api/url", urlPostOneHandler).Methods("POST")
 	router.HandleFunc("/api/url/{id}", urlDeleteOneHandler).Methods("DELETE")
 	router.HandleFunc("/api/url/{id}", urlPutOneHandler).Methods("PUT")
+	router.HandleFunc("/api/url/restart", urlPostRestartAllHandler).Methods("POST")
 
 	router.HandleFunc("/api/tbl/{id}", tblGetOneHandler).Methods("GET")
 	router.HandleFunc("/api/tbl", tblGetManyHandler).Methods("GET")
@@ -276,9 +277,9 @@ func StartAPI(log *slog.Logger) {
 	router.HandleFunc("/api/tbl/{id}", tblDeleteOneHandler).Methods("DELETE")
 	router.HandleFunc("/api/tbl/{id}", tblPutOneHandler).Methods("PUT")
 
-	// Add middlewares
-	router.Use(ObservabilityMiddleware)
-	router.Use(CORSMiddleware)
+	// Add web admin and route by default
+	router.Path("/").Handler(http.RedirectHandler("/admin/", http.StatusSeeOther))
+	router.PathPrefix("/admin").Handler(http.FileServer(http.FS(webDist)))
 
 	// Start the engine
 	log.Debug("Starting api server", "config", config.Server)

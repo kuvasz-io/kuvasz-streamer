@@ -84,7 +84,7 @@ func syncTable(log *slog.Logger,
 
 	// Prepare column list
 	columns := ""
-	for c := range destTables[destTableName].Columns {
+	for c := range DestTables[destTableName].Columns {
 		if c == "sid" || strings.HasPrefix(c, "kvsz_") {
 			continue
 		}

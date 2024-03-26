@@ -19,7 +19,7 @@ type (
 func (op operation) buildSetList(tableName string, args []arg, values map[string]any) ([]arg, error) {
 	i := 0
 	for attribute, value := range values {
-		_, ok := destTables[tableName].Columns[attribute]
+		_, ok := DestTables[tableName].Columns[attribute]
 		if !ok {
 			log.Debug("skip non-existing attribute", "attribute", attribute)
 			continue
@@ -52,7 +52,7 @@ func (op operation) buildWhere(
 				log.Debug("Skip non-primary key component", "column", column)
 				continue
 			}
-			_, ok := destTables[tableName].Columns[column.Name]
+			_, ok := DestTables[tableName].Columns[column.Name]
 			if !ok {
 				log.Error("Configuration error: primary key component does not exist in destination table.", "column", column)
 				continue
@@ -78,7 +78,7 @@ func (op operation) buildWhere(
 	case 'O':
 		// no primary key is defined, range over all incoming values skipping non-existing columns
 		for column, value := range oldValues {
-			_, ok := destTables[tableName].Columns[column]
+			_, ok := DestTables[tableName].Columns[column]
 			if !ok {
 				log.Error("Configuration error: skip non-existing column with replica-identity-full, tables should be similar",
 					"column", column)
@@ -101,6 +101,7 @@ func (op operation) buildWhere(
 
 func (op operation) insertClone(tx pgx.Tx) error {
 	var query string
+	var err error
 	log = op.log.With("op", "insertClone", "table", op.destTable)
 
 	t0 := time.Now()
@@ -111,7 +112,7 @@ func (op operation) insertClone(tx pgx.Tx) error {
 	queryParameters = append(queryParameters, op.sid)
 	i := 2
 	for c, v := range op.values {
-		_, ok := destTables[op.destTable].Columns[c]
+		_, ok := DestTables[op.destTable].Columns[c]
 		if !ok {
 			log.Debug("skip non-existing destination column", "column", c)
 			continue

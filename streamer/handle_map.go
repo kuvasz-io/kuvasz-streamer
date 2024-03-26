@@ -120,12 +120,13 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Finally refresh mapping table
+	// Now refresh mapping table
 	err = RefreshMappingTable()
 	if err != nil {
 		req.ReturnError(w, http.StatusInternalServerError, "internal_error", "Error refreshing mapping table", err)
 		return
 	}
+
 	req.ReturnOK(w, r, t, 1)
 }
 

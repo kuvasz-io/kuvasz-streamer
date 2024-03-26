@@ -49,7 +49,7 @@ func createReplicationSlot(
 	var active bool
 	var activePid *int
 	var lsn pglogrepl.LSN
-	err = conn.QueryRow(
+	err := conn.QueryRow(
 		ctx,
 		"select active, active_pid, confirmed_flush_lsn from pg_replication_slots where slot_name=$1;",
 		slotName).Scan(&active, &activePid, &lsn)
@@ -99,39 +99,20 @@ func pgVersion(log *slog.Logger, conn *pgx.Conn) (int, error) {
 	return version, nil
 }
 
-func DoReplicateDatabase(database SourceDatabase, url *SourceURL) {
-	for {
-		err := ReplicateDatabase(database, url)
-		log.Error("cannot start replication", "error", err, "db-sid", database.Name+"_"+url.SID, "url", url.URL)
-		URLError[url.URL] = err.Error()
-		time.Sleep(60 * time.Second)
-	}
-}
-
-func makePublication(database SourceDatabase) string {
-	log.Debug("Creating publication", "database", database, "MappingTable", MappingTable)
-	if len(database.Tables) == 0 {
-		return ""
-	}
-	p := " for table "
-	for i := range MappingTable {
-		if MappingTable[i].DBName != database.Name {
-			continue
+//nolint:funlen,gocognit,cyclop,gocyclo // This is is just multiple steps and needs to be in a single function
+func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url *SourceURL) error {
+	// Create command channel
+	url.commandChannel = make(chan string)
+	syncContext, syncCancel := context.WithCancel(rootContext)
+	defer syncCancel()
+	go func() {
+		select {
+		case <-url.commandChannel:
+			syncCancel()
+		case <-syncContext.Done():
 		}
-		// if this is a partitioned table, add all partitions
-		if len(MappingTable[i].Partitions) > 0 {
-			for j := range MappingTable[i].Partitions {
-				p = p + MappingTable[i].Partitions[j] + ", "
-			}
-		} else {
-			p = p + MappingTable[i].Name + ", "
-		}
-	}
-	return p[0 : len(p)-2]
-}
+	}()
 
-//nolint:funlen,gocognit // This is is just multiple steps and needs to be in a single function
-func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 	// Connect to selected source database
 	log := log.With("db-sid", database.Name+"-"+url.SID)
 	databaseURL := strings.Split(url.URL, "?")[0] + "?replication=database&application_name=kuvasz_" + database.Name
@@ -147,6 +128,7 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 	if err != nil {
 		return fmt.Errorf("cannot start replication connection, error=%w", err)
 	}
+	defer conn.Close(ctx)
 	replConn := conn.PgConn()
 
 	// Validate server version
@@ -195,7 +177,16 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 		return fmt.Errorf("cannot check publication and slot, error=%w", err)
 	}
 	// Check existing replication slot and existing consumer
-	if !(publication == 1 && slot == 1) { // publication and slot need to be corrected
+	// Publication=0, Slot=0 => Fresh config, create publication
+	// Publication=0, Slot=1 => Anomaly, slot created without publication, drop it and create publication
+	// Publication=1, Slot=0 => Anomaly, Publication created without slot, drop it and re-create it
+	// Publication=1, Slot=1 => Normal case, tables may have been added or removed, sync publication
+	if publication == 1 && slot == 1 {
+		err = SyncPublications(log, conn, database, "public")
+		if err != nil {
+			return fmt.Errorf("cannot sync publications: %w", err)
+		}
+	} else {
 		if publication == 0 && slot == 1 { // slot without publication, drop it
 			_, err = conn.Exec(context.Background(), `select pg_drop_replication_slot($1)`, slotName)
 			if err != nil {
@@ -280,12 +271,16 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 			nextStandbyMessageDeadline = time.Now().Add(standbyMessageTimeout)
 		}
 
-		timerCtx, cancel := context.WithDeadline(context.Background(), nextStandbyMessageDeadline)
+		timerCtx, cancel := context.WithDeadline(syncContext, nextStandbyMessageDeadline)
 		rawMsg, err := replConn.ReceiveMessage(timerCtx)
 		cancel()
 		if err != nil {
 			if pgconn.Timeout(err) {
 				continue
+			}
+			if errors.Is(err, context.Canceled) {
+				log.Info("Got restart message, restarting replication")
+				return nil
 			}
 			return fmt.Errorf("cannot ReceiveMessage, error=%w", err)
 		}
@@ -330,5 +325,18 @@ func ReplicateDatabase(database SourceDatabase, url *SourceURL) error {
 				clientXLogPos = xld.WALStart
 			}
 		}
+	}
+}
+
+func DoReplicateDatabase(rootContext context.Context, database SourceDatabase, url *SourceURL) {
+	for {
+		err := ReplicateDatabase(rootContext, database, url)
+		if err == nil {
+			return
+		}
+
+		log.Error("cannot start replication", "error", err, "db-sid", database.Name+"_"+url.SID, "url", url.URL)
+		URLError[url.URL] = err.Error()
+		time.Sleep(60 * time.Second)
 	}
 }

@@ -71,14 +71,14 @@ func (op operation) updateHistory(tableName string, relation PGRelation, values 
 
 	// Run query
 	log.Debug("update", "query", query, "args", queryParameters)
-	_, err = DestConnectionPool.Exec(context.Background(), query, queryParameters...)
+	_, err := DestConnectionPool.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
 		log.Error("can't update", "query", query, "error", err)
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "update", "failure").Inc()
 		return fmt.Errorf("updateHistory failed: error=%w", err)
 	}
 	err = op.insertHistory(tableName, t0, values)
-	return nil
+	return err
 }
 
 func (op operation) deleteHistory(tableName string, relation PGRelation, values map[string]any, old uint8) error {

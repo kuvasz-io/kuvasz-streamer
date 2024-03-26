@@ -1,8 +1,10 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -56,4 +58,20 @@ func BuildQuery(base string, m SQLModifier) string {
 	query = fmt.Sprintf("%s ORDER BY %s %s", query, m.SortField, order)
 	log.Debug("Built query", "query", query, "modifier", m)
 	return query
+}
+
+func SetupConfigDB() {
+	var err error
+	ConfigDB, err = sql.Open("sqlite3", config.App.MapDatabase)
+	if err != nil {
+		log.Error("Can't open map database", "database", config.App.MapFile, "error", err)
+		os.Exit(1)
+	}
+}
+
+func CloseConfigDB() {
+	if ConfigDB != nil {
+		ConfigDB.Close()
+	}
+	ConfigDB = nil
 }
