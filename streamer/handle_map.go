@@ -93,7 +93,7 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t := MappingTable[id]
-	log = log.With("handler", "MapCloneTableHandler", "id", id)
+	log := log.With("handler", "MapCloneTableHandler", "id", id)
 
 	log.Debug("Cloning table", "name", t.Name)
 	// Create table if not present

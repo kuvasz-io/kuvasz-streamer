@@ -37,7 +37,11 @@ func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase, schem
 	ctx := context.Background()
 	publishedTables := make(map[string]bool)
 	// Fetch list of published tables
-	rows, err := conn.Query(ctx, "SELECT tablename FROM pg_publication_tables WHERE pubname = 'kuvasz_'||$1 and schemaname = $2", db.Name, schema)
+	rows, err := conn.Query(
+		ctx,
+		"SELECT tablename FROM pg_publication_tables WHERE pubname = 'kuvasz_'||$1 and schemaname = $2",
+		db.Name,
+		schema)
 	if err != nil {
 		return fmt.Errorf("cannot query publication tables, error: %w", err)
 	}

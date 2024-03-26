@@ -9,7 +9,7 @@ import (
 func (op operation) insertHistory(tableName string, startTime time.Time, values map[string]any) error {
 	var query string
 	args := make([]arg, 0)
-	log = log.With("op", "insertHistory", "table", tableName)
+	log := log.With("op", "insertHistory", "table", tableName)
 
 	// Build argument list
 	args = append(args, arg{"sid", op.sid})
@@ -52,7 +52,7 @@ func (op operation) insertHistory(tableName string, startTime time.Time, values 
 // 3. PK does not exist, replica full => old=O, oldValues=alloldValues ==> where allfields=alloldValues.
 func (op operation) updateHistory(tableName string, relation PGRelation, values map[string]any, old uint8, oldValues map[string]any) error {
 	var i = 1
-	log = op.log.With("op", "updateHistory", "table", tableName)
+	log := op.log.With("op", "updateHistory", "table", tableName)
 
 	t0 := time.Now()
 
@@ -83,7 +83,7 @@ func (op operation) updateHistory(tableName string, relation PGRelation, values 
 
 func (op operation) deleteHistory(tableName string, relation PGRelation, values map[string]any, old uint8) error {
 	var query string
-	log = log.With("op", "deleteHistory", "table", tableName)
+	log := log.With("op", "deleteHistory", "table", tableName)
 	t0 := time.Now()
 
 	// Build query

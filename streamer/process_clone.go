@@ -102,7 +102,7 @@ func (op operation) buildWhere(
 func (op operation) insertClone(tx pgx.Tx) error {
 	var query string
 	var err error
-	log = op.log.With("op", "insertClone", "table", op.destTable)
+	log := op.log.With("op", "insertClone", "table", op.destTable)
 
 	t0 := time.Now()
 	// Build query
@@ -146,7 +146,7 @@ func (op operation) insertClone(tx pgx.Tx) error {
 func (op operation) updateClone(tx pgx.Tx) error {
 	var i int
 	args := make([]arg, 0)
-	log = op.log.With("op", "updateClone", "table", op.destTable)
+	log := op.log.With("op", "updateClone", "table", op.destTable)
 
 	t0 := time.Now()
 	log.Debug("Dump params", "values", op.values, "oldvalues", op.oldValues, "old", op.old)
@@ -191,7 +191,7 @@ func (op operation) updateClone(tx pgx.Tx) error {
 
 func (op operation) deleteClone(tx pgx.Tx) error {
 	var query string
-	log = op.log.With("op", "deleteClone", "table", op.destTable)
+	log := op.log.With("op", "deleteClone", "table", op.destTable)
 
 	t0 := time.Now()
 	log.Debug("Dump params", "op", op)
