@@ -42,7 +42,7 @@ func makePublication(database SourceDatabase) string {
 		}
 		// if this is a partitioned table, add all partitions
 		if len(MappingTable[i].Partitions) > 0 {
-			p += strings.Join(MappingTable[i].Partitions, ", ")
+			p += strings.Join(MappingTable[i].Partitions, ", ") + ", "
 		} else {
 			p = p + MappingTable[i].Name + ", "
 		}
