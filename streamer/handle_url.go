@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 )
@@ -39,6 +41,10 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		`SELECT url.url_id, url.db_id, db.name as db_name, url.sid, url.url 
 		FROM url inner join db on url.db_id = db.db_id WHERE url_id = ?`,
 		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.SID, &item.URL)
+	if errors.Is(err, sql.ErrNoRows) {
+		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find url", err)
+		return
+	}
 	if err != nil {
 		log.Error("Cannot read url", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
