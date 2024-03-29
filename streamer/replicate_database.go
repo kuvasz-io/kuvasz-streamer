@@ -182,8 +182,9 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	// Publication=1, Slot=0 => Anomaly, Publication created without slot, drop it and re-create it
 	// Publication=1, Slot=1 => Normal case, tables may have been added or removed, sync publication
 	//nolint:nestif // this cannot be really simplified
+	var newTables []string
 	if publication == 1 && slot == 1 {
-		err = SyncPublications(log, conn, database, "public")
+		newTables, err = SyncPublications(log, conn, database, "public")
 		if err != nil {
 			return fmt.Errorf("cannot sync publications: %w", err)
 		}
@@ -220,6 +221,13 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 			return fmt.Errorf("cannot perform initial sync, error=%w", err)
 		}
 		log.Debug("Finished full table sync")
+		time.Sleep(time.Duration(config.Maintenance.StartDelay) * time.Second)
+	} else {
+		err := syncNewTables(log, url.SID, database.Tables, newTables, replConn)
+		if err != nil {
+			return fmt.Errorf("cannot perform initial sync for new tables, error=%w", err)
+		}
+		log.Debug("Finished full table sync for new tables")
 		time.Sleep(time.Duration(config.Maintenance.StartDelay) * time.Second)
 	}
 

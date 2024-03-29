@@ -1,0 +1,43 @@
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "URL identifier",
+            "example": 1
+        },
+        "db_id": {
+            "type": "integer",
+            "description": "Database identifier",
+            "example": 1
+        },
+        "db_name": {
+            "type": "string",
+            "description": "Database name",
+            "example": "wordpress"
+        },
+        "sid": {
+            "type": "string",
+            "description": "Source or tenant identifier for multi-tenant databases with the same schema",
+            "example": "customer1"
+        },
+        "url": {
+            "type": "string",
+            "description": "Postgres connection string",
+            "example": "postgres://user:password@db.example.com/mydb"
+        },
+        "up": {
+            "type": "boolean",
+            "description": "Database connection status",
+            "example": true
+        },
+        "error": {
+            "type": "string",
+            "description": "Last error message while connecting to database",
+            "example": "Host unreachable"
+        }
+    },
+    "required": [
+        "id", "db_id", "sid", "url"
+    ]
+}

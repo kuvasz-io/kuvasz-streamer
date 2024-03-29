@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 )
@@ -40,6 +42,10 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id
 		WHERE tbl_id = ?`,
 		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+	if errors.Is(err, sql.ErrNoRows) {
+		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find table", nil)
+		return
+	}
 	if err != nil {
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl", err)
 		return

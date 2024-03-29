@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "properties": {
+        "code": {
+            "type": "string",
+            "description": "Error code",
+            "example": "system_error"
+        },
+        "error": {
+            "type": "string",
+            "description": "Localized error message",
+            "example": "Invalid database ID"
+        },
+        "info": {
+            "type": "string",
+            "description": "Low level error to help debugging, present only in developer mode",
+            "example": "pq: invalid attribute length: name"
+        }
+    },
+    "required": [
+        "code",
+        "error"
+    ]
+}

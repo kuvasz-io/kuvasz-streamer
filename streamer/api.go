@@ -102,6 +102,9 @@ func (req Request) ReturnError(w http.ResponseWriter, status int, code string, m
 
 	w.WriteHeader(status)
 	log.Error("request error", "status", status, "code", code, "message", message, "error", err)
+	if err == nil {
+		err = errors.New("no additional error information")
+	}
 	apiError := ErrorMessage{Code: code, Error: message, Info: err.Error()}
 	jsonAPIError, err := json.Marshal(apiError)
 	if err != nil {

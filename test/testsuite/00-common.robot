@@ -3,10 +3,13 @@ Library           DatabaseLibrary
 Library           OperatingSystem
 Library           Collections
 Library           String
+Library           REST    http://127.0.0.1:8000
 
 *** Variables ***
 ${SLEEP}          1.8
 @{PGVERSIONS}=    12    13    14    15    16
+${SCHEMA}        ./schema
+${ADMIN}         {"content-type": "application/json"}
 
 *** Keywords ***
 Connect To All Databases

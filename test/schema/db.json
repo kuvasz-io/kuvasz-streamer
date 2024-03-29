@@ -1,0 +1,18 @@
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "integer",
+            "description": "Database identifier",
+            "example": 1
+        },
+        "name": {
+            "type": "string",
+            "description": "Database name",
+            "example": "wordpress"
+        }
+    },
+    "required": [
+        "id", "name"
+    ]
+}

@@ -346,7 +346,7 @@ func RefreshMappingTable() error {
 		result[i].ID = int64(i)
 	}
 	MappingTable = result
-	log.Debug("Refreshed mapping table", "count", len(MappingTable))
+	log.Debug("Refreshed mapping table", "MappingTable", MappingTable)
 	return nil
 }
 

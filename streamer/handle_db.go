@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 )
@@ -28,6 +30,10 @@ func dbGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ConfigDB.QueryRow(`SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.ID, &item.Name)
+	if errors.Is(err, sql.ErrNoRows) {
+		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find database", err)
+		return
+	}
 	if err != nil {
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read database schema list", err)
 		return
@@ -77,11 +83,15 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	err = json.Unmarshal(body, &item)
 	if err != nil {
 		log.Error("could not decode db", "error", err)
-		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
+		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "JSON parse error", err)
+		return
+	}
+	// err = app.Validate.Struct(item)
+	if item.Name == "" {
+		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "Missing name", nil)
 		return
 	}
 	log.Debug("Creating db", "item", item)
-	// err = app.Validate.Struct(item)
 
 	result, err := ConfigDB.Exec(
 		`INSERT INTO db(name) VALUES (?)`, item.Name)
@@ -139,6 +149,10 @@ func dbPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Error("could not decode db", "error", err)
 		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
+		return
+	}
+	if item.Name == "" {
+		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "missing mandatory fields: name", nil)
 		return
 	}
 	log.Debug("Updating db", "item", item)
