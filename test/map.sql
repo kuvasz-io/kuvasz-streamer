@@ -13,7 +13,7 @@ insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(4, 1
 insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(5, 1,'t4', 'history','t4',  NULL);
 insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(6, 1,'t5', 'clone',  't5',  NULL);
 insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(7, 1,'t6', 'clone',  't6',  NULL);
-insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(8, 1,'t7', 'history','t7',  't7_.*');
+insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(8, 1,'t7', 'clone',  't7',  't7_.*');
 
 insert into db(db_id, name) values(2, 'db2');
 
