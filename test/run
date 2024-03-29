@@ -17,15 +17,15 @@ function gen() {
 # Clean any existing process
 killall kuvasz-streamer || true
 
-# Pull latest minor version
-# export REGISTRY=docker.io
-# for VER in 12 13 14 15 16; do
-#     docker pull ${REGISTRY}/postgres:${VER}
-# done
+Pull latest minor version
+export REGISTRY=docker.io
+for VER in 12 13 14 15 16; do
+    docker pull ${REGISTRY}/postgres:${VER}
+done
 
-# # Start postgres containers
-# docker compose down
-# docker compose up -d
+# Start postgres containers
+docker compose down
+docker compose up -d
 
 # Wait until all instances are ready
 for PORT in 6012 6013 6014 6015 6016; do
@@ -52,5 +52,5 @@ kill $pid
 
 robot --exitonfailure -d log testsuite
 cp log/log.html log/report.html ../docs/
-# docker compose down
-# killall kuvasz-streamer
+docker compose down
+killall kuvasz-streamer
