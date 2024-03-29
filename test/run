@@ -17,7 +17,7 @@ function gen() {
 # Clean any existing process
 killall kuvasz-streamer || true
 
-Pull latest minor version
+# Pull latest minor version
 export REGISTRY=docker.io
 for VER in 12 13 14 15 16; do
     docker pull ${REGISTRY}/postgres:${VER}
