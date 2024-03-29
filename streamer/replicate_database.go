@@ -181,8 +181,8 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	// Publication=0, Slot=1 => Anomaly, slot created without publication, drop it and create publication
 	// Publication=1, Slot=0 => Anomaly, Publication created without slot, drop it and re-create it
 	// Publication=1, Slot=1 => Normal case, tables may have been added or removed, sync publication
-	//nolint:nestif // this cannot be really simplified
 	var newTables []string
+	//nolint:nestif // this cannot be really simplified
 	if publication == 1 && slot == 1 {
 		newTables, err = SyncPublications(log, conn, database, "public")
 		if err != nil {
