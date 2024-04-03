@@ -32,9 +32,10 @@
             "example": "admin_accounts"
         },
         "partitions_regex": {
-            "type": "string",
+            "type": ["string","null"],
             "description": "Regular expression matching partition names",
-            "example": "^accounts_.*"
+            "example": "^accounts_.*",
+            "optional": true
         }
     },
     "required": [

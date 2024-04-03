@@ -2,7 +2,7 @@ import simpleRestProvider from "ra-data-simple-rest";
 import { fetchUtils } from 'ra-core';
 
 export const baseDataProvider = simpleRestProvider(
-  '/api', 
+  'http://turing:8000/api', 
   fetchUtils.fetchJson, 
   'X-Total-Count'
 );

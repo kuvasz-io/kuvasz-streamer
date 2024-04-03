@@ -7,5 +7,7 @@ if ! getent passwd "kuvasz" > /dev/null 2>&1 ; then
 fi
 touch /var/log/kuvasz-streamer.log
 chown syslog:adm /var/log/kuvasz-streamer.log
-systemctl restart rsyslog
-systemctl daemon-reload
+if test -d /run/systemd/system; then
+    systemctl restart rsyslog
+    systemctl daemon-reload
+fi

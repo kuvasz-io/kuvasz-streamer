@@ -110,6 +110,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 		case <-url.commandChannel:
 			syncCancel()
 		case <-syncContext.Done():
+		case <-rootContext.Done():
 		}
 	}()
 
@@ -338,13 +339,15 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 }
 
 func DoReplicateDatabase(rootContext context.Context, database SourceDatabase, url *SourceURL) {
+	defer wg.Done()
 	for {
 		err := ReplicateDatabase(rootContext, database, url)
 		if err == nil {
+			log.Error("Interrupted", "db-sid", database.Name+"-"+url.SID, "url", url.URL)
 			return
 		}
 
-		log.Error("cannot start replication", "error", err, "db-sid", database.Name+"_"+url.SID, "url", url.URL)
+		log.Error("cannot start replication", "error", err, "db-sid", database.Name+"-"+url.SID, "url", url.URL)
 		URLError[url.URL] = err.Error()
 		time.Sleep(60 * time.Second)
 	}

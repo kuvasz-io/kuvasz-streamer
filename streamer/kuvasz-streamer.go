@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // suppress linter error
-	"time"
+	"os"
+	"sync"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/mattn/go-sqlite3"
@@ -18,6 +19,9 @@ const (
 	TableTypeAppend  = "append"
 	TableTypeHistory = "history"
 	TableTypeClone   = "clone"
+	StatusStarting   = "starting"
+	StatusActive     = "active"
+	StatusStopping   = "stopping"
 )
 
 var (
@@ -30,6 +34,8 @@ var (
 	dbmap              DBMap
 	URLError           = make(map[string]string)
 	RootChannel        chan string
+	wg                 sync.WaitGroup
+	Status             = StatusStarting
 
 	//go:embed migrations/*.sql
 	embedMigrations embed.FS
@@ -37,6 +43,11 @@ var (
 	//go:embed admin
 	webDist embed.FS
 )
+
+func SetStatus(s string) {
+	log.Info("Setting status to", "status", s)
+	Status = s
+}
 
 func main() {
 	Configure(
@@ -63,7 +74,12 @@ func main() {
 	// Start main loop
 	RootChannel = make(chan string)
 	for {
-		SetupDestination()
+		SetStatus(StatusStarting)
+		err := SetupDestination()
+		if err != nil {
+			log.Error("Error setting up destination", "err", err)
+			os.Exit(1)
+		}
 		ReadMap()
 		CompileRegexes()
 		// Create root context allowing cancellation of all goroutines
@@ -73,14 +89,18 @@ func main() {
 		log.Info("Start processing source databases")
 		for _, database := range dbmap {
 			for i, url := range database.Urls {
-				log.Info("Starting replication thread", "db", database.Name, "url", url.URL, "sid", url.SID)
+				log.Info("Starting replication thread", "db-sid", database.Name+"-"+url.SID, "url", url.URL)
+				wg.Add(1)
 				go DoReplicateDatabase(rootContext, database, &database.Urls[i])
 			}
 		}
+		SetStatus(StatusActive)
 		<-RootChannel
 		rootCancel()
+		SetStatus(StatusStopping)
 		// wait until all workers exit
-		time.Sleep(1 * time.Second)
+		log.Debug("Waiting for workers to exit")
+		wg.Wait()
 		CloseDestination()
 		CloseConfigDB()
 	}

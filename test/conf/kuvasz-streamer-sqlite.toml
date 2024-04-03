@@ -10,7 +10,7 @@ max_header_bytes = 1000
 
 [maintenance]
 pprof = "127.0.0.1:6060"
-start_delay = 5
+start_delay = 4
 
 [logs]
 output="console"

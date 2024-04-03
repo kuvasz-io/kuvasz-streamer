@@ -48,7 +48,6 @@ const RefreshButton = () => {
     return <button onClick={handleClick}>Refresh</button>;
 };
 
-
 export const MapList = () => (
     <List pagination={false} perPage={1000}>
         <Datagrid >
@@ -58,6 +57,7 @@ export const MapList = () => (
             <TextField source="name" label="Table" sortable={false}/>
             <TextField source="type" sortable={false}/>
             <TextField source="target" sortable={false}/>
+            <TextField source="partitions" sortable={false}/>
             <TextField source="partitions_regex" sortable={false}/>
             <BooleanField    source="replicated" sortable={false}/>
             <BooleanField    source="present" sortable={false}/>

@@ -280,6 +280,7 @@ func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (*
 }
 
 func RefreshMappingTable() error {
+	var err error
 	// Step 1. Get list of destination tables
 	destConn, err := DestConnectionPool.Acquire(context.Background())
 	if err != nil {
@@ -287,7 +288,7 @@ func RefreshMappingTable() error {
 	}
 	defer destConn.Release()
 
-	destinationTables, err := GetTables(log, destConn.Conn(), "public")
+	DestTables, err = GetTables(log, destConn.Conn(), "public")
 	if err != nil {
 		return fmt.Errorf("can't get destination table metadata, error=%w", err)
 	}
@@ -333,7 +334,7 @@ func RefreshMappingTable() error {
 			if destName == "" {
 				destName = k
 			}
-			d, ok := destinationTables[destName]
+			d, ok := DestTables[destName]
 			if t.Type != "" || ok {
 				t.Present = true
 				t.DestColumns = d.Columns

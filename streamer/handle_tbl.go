@@ -102,6 +102,10 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
 		return
 	}
+	if item.DBId == 0 || item.Name == "" || item.Type == "" || item.Target == "" {
+		req.ReturnError(w, http.StatusBadRequest, "0003", "Missing parameters", nil)
+		return
+	}
 	log.Debug("Creating tbl", "item", item)
 	// err = app.Validate.Struct(item)
 
@@ -164,8 +168,14 @@ func tblPutOneHandler(w http.ResponseWriter, r *http.Request) {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
 		return
 	}
-	log.Debug("Updating tbl", "id", id, "item", item)
+
 	// err = app.Validate.Struct(item)
+	if item.DBId == 0 || item.Name == "" || item.Type == "" || item.Target == "" {
+		req.ReturnError(w, http.StatusBadRequest, "0003", "Missing parameters", nil)
+		return
+	}
+
+	log.Debug("Updating tbl", "id", id, "item", item)
 
 	result, err := ConfigDB.Exec(
 		`UPDATE tbl set name=?, type=?, target=?, partitions_regex=? where tbl_id=?`,

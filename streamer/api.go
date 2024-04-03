@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -160,12 +161,12 @@ func contains(item string, list []string) bool {
 }
 
 func CORSHandler(w http.ResponseWriter, r *http.Request) {
-	req := PrepareReq(w, r)
 	log := log.With("handler", "CORS")
 
 	origin := r.Header.Get("Origin")
 	log.Info("CORS Handler", "origin", origin)
 	if !contains(origin, config.Cors.AllowedOrigins) && config.Cors.AllowedOrigins[0] != "*" {
+		req := PrepareReq(w, r)
 		log.Error("origin is not in the list of allowed origins", "origin", origin, "list", config.Cors.AllowedOrigins)
 		req.ReturnError(w, 400, "origin_not_allowed", "", nil)
 		return
@@ -237,6 +238,19 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func StatusMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log := log.With("handler", "Status")
+		if Status != "active" && strings.HasPrefix(r.URL.Path, "/api") {
+			req := PrepareReq(w, r)
+			log.Error("Server is not ready", "status", Status)
+			req.ReturnError(w, 400, "not_ready", fmt.Sprintf("server not ready: %s", Status), nil)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func APIServer(log *slog.Logger) {
 	// Set global logger
 	app.log = log.With("module", "api")
@@ -246,6 +260,7 @@ func APIServer(log *slog.Logger) {
 
 	// Add middlewares
 	router.Use(ObservabilityMiddleware)
+	router.Use(StatusMiddleware)
 	router.Use(CORSMiddleware)
 
 	// Add utility handlers

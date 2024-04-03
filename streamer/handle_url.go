@@ -101,11 +101,15 @@ func urlPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	err = json.Unmarshal(body, &item)
 	if err != nil {
-		log.Error("could not decode db", "error", err)
+		log.Error("could not decode url", "error", err)
 		req.ReturnError(w, http.StatusBadRequest, "0003", "JSON parse error", err)
 		return
 	}
-
+	if item.DBId == 0 || item.SID == "" || item.URL == "" {
+		log.Error("missing parameters", "item", item)
+		req.ReturnError(w, http.StatusBadRequest, "0003", "missing parameters", nil)
+		return
+	}
 	// Add entry
 	log.Debug("Creating db", "item", item)
 	result, err := ConfigDB.Exec(
@@ -172,6 +176,11 @@ func urlPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("Updating url", "id", id, "item", item)
 	// err = app.Validate.Struct(item)
+	if item.DBId == 0 || item.SID == "" || item.URL == "" {
+		log.Error("missing parameters", "item", item)
+		req.ReturnError(w, http.StatusBadRequest, "0003", "missing parameters", nil)
+		return
+	}
 
 	result, err := ConfigDB.Exec(
 		`UPDATE url set sid=?, url=? where url_id=?`,

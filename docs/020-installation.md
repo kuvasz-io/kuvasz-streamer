@@ -36,7 +36,7 @@ name=Kuvasz.io
 baseurl=https://rpm.kuvasz.io
 enabled=1
 gpgcheck=1
-gpgkey=https://rpm.kuvasz.io/gpg.key
+gpgkey=https://rpm.kuvasz.io/RPM-GPG-KEY-kuvasz
 sslverify=1
 sslcacert=/etc/pki/tls/certs/ca-bundle.crt
 EOF

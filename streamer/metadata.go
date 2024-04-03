@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"os"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -137,14 +136,13 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 	return pgTables, nil
 }
 
-func SetupDestination() {
+func SetupDestination() error {
 	var err error
 
-	// Connect to target database
+	// Connect to target database if not already connected
 	DestConnectionPool, err = pgxpool.New(context.Background(), config.Database.URL)
 	if err != nil {
-		log.Error("Can't connect to target database", "url", config.Database.URL, "error", err)
-		os.Exit(1)
+		return fmt.Errorf("can't connect to target database, url=%s, error=%w", config.Database.URL, err)
 	}
 	log.Info("Connected to target database", "url", config.Database.URL)
 
@@ -152,17 +150,14 @@ func SetupDestination() {
 	log.Info("Getting destination table metadata")
 	conn, err := DestConnectionPool.Acquire(context.Background())
 	if err != nil {
-		log.Error("Can't get destination table metadata", "error", err)
-		os.Exit(1)
+		return fmt.Errorf("can't get destination table metadata: error=%w", err)
 	}
-
+	defer conn.Release()
 	DestTables, err = GetTables(log, conn.Conn(), "public")
 	if err != nil {
-		log.Error("Can't get destination table metadata", "error", err)
-		conn.Release()
-		os.Exit(1)
+		return fmt.Errorf("can't get destination table metadata, error=%w", err)
 	}
-	conn.Release()
+	return nil
 }
 
 func CloseDestination() {

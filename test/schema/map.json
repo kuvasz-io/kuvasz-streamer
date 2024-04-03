@@ -3,7 +3,7 @@
     "properties": {
         "id": {
             "type": "integer",
-            "description": "Table identifier",
+            "description": "Map entry identifier",
             "example": 1
         },
         "db_id": {
@@ -32,81 +32,62 @@
             "example": "admin_accounts"
         },
         "partitions": {
-            "type": "array",
-            "description": "List of current partition names",
-            "example": "[\"account_2024-01\", \"accounts_2024_02\"]",
+            "type": ["array","null"],
+            "description": "Array of partition names",
             "items": {
                 "type": "string"
             }
         },
         "partitions_regex": {
-            "type": "string",
+            "type": ["string","null"],
             "description": "Regular expression matching partition names",
-            "example": "^accounts_.*"
-        },
-        "replicated": {
-            "type": "boolean",
-            "description": "Table is configured for replication",
-            "example": true
-        },
-        "present": {
-            "type": "boolean",
-            "description": "Table exists in destination database",
-            "example": false
+            "example": "^accounts_.*",
+            "optional": true
         },
         "source_columns": {
             "type": "object",
-            "description": "List of source columns",
+            "description":"Map of source column names",
             "properties": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "column name"
-                    },
-                    "column_type": {
-                        "type": "string",
-                        "description": "column data type: text, int4, varchar, ..."
-                    },
-                    "data_type_oid": {
-                        "type": "integer",
-                        "description": "column data type OID"
-                    },
-                    "primary_key": {
-                        "type": "boolean",
-                        "description": "column is part of the primary key"
-                    }
+                "column_type": {
+                    "type": "string",
+                    "description": "Column type (text, int4, timestamp, ......)",
+                    "example": "text"
+                },
+                "data_type_oid": {
+                    "type": "integer",
+                    "description": "Column postgres data type identifier",
+                    "example": 25
+                },
+                "primary key": {
+                    "type":"boolean",
+                    "description": "Column is part of a primary key",
+                    "example": true
                 }
             }
         },
-        "dest_columns": {
+        "target_columns": {
             "type": "object",
-            "description": "List of destination columns",
+            "description":"Map of source column names",
             "properties": {
-                "type": "object",
-                "properties": {
-                    "name": {
-                        "type": "string",
-                        "description": "column name"
-                    },
-                    "column_type": {
-                        "type": "string",
-                        "description": "column data type: text, int4, varchar, ..."
-                    },
-                    "data_type_oid": {
-                        "type": "integer",
-                        "description": "column data type OID"
-                    },
-                    "primary_key": {
-                        "type": "boolean",
-                        "description": "column is part of the primary key"
-                    }
+                "column_type": {
+                    "type": "string",
+                    "description": "Column type (text, int4, timestamp, ......)",
+                    "example": "text"
+                },
+                "data_type_oid": {
+                    "type": "integer",
+                    "description": "Column postgres data type identifier",
+                    "example": 25
+                },
+                "primary key": {
+                    "type":"boolean",
+                    "description": "Column is part of a primary key",
+                    "example": true
                 }
             }
         }
-
     },
     "required": [
-        "id", "db_id", "name", "type", "target"
+        "id", "db_id", "db_name","name", "type", "target"
     ]
 }

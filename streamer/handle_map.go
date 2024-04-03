@@ -11,8 +11,12 @@ func MapGetOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	// extract id
 	id, err := ExtractID(r)
+	if err != nil {
+		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
+		return
+	}
 
-	// Validate id
+	// Find id
 	if len(MappingTable) == 0 {
 		err := RefreshMappingTable()
 		if err != nil {
@@ -20,7 +24,7 @@ func MapGetOneHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if err != nil || id < 0 || id >= int64(len(MappingTable)) {
+	if id < 0 || id >= int64(len(MappingTable)) {
 		req.ReturnError(w, http.StatusNotFound, "invalid_id", "Invalid ID", err)
 		return
 	}
@@ -93,12 +97,39 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	t := MappingTable[id]
-	log := log.With("handler", "MapCloneTableHandler", "id", id)
+	log := log.With("handler", "MapReplicateTableHandler", "id", id)
 
-	log.Debug("Cloning table", "name", t.Name)
+	// extract type
+	tabletype := r.URL.Query().Get("type")
+	if tabletype == "" {
+		tabletype = TableTypeClone
+	}
+	if tabletype != TableTypeClone && tabletype != TableTypeAppend && tabletype != TableTypeHistory {
+		req.ReturnError(w, http.StatusBadRequest, "invalid_type", "Invalid type", nil)
+		return
+	}
+
+	// extract target name
+	target := r.URL.Query().Get("target")
+	if target == "" {
+		target = t.Name
+	}
+
+	// extract regex
+	regex := r.URL.Query().Get("partitions_regex")
+	log.Debug("params", "id", id, "type", tabletype, "target", target, "regex", regex)
+
+	// check the table is not partitioned
+	if regex == "" && len(t.Partitions) > 0 {
+		req.ReturnError(w, http.StatusBadRequest, "cannot_clone_partitioned_table", "Missing partitions regex", nil)
+		return
+	}
+
+	log.Debug("Replicating table", "name", t.Name, "type", tabletype, "target", target, "regex", regex)
+
 	// Create table if not present
-	if !t.Present {
-		q := "CREATE TABLE " + t.Name + "(sid text"
+	if _, ok := DestTables[target]; !ok {
+		q := "CREATE TABLE " + target + "(sid text"
 		for k, v := range t.SourceColumns {
 			q += ", " + k + " " + v.ColumnType
 		}
@@ -110,11 +141,12 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+
 	// Now add it to config
-	log.Debug("Adding entry to tbl", "db_id", t.DBId, "name", t.Name)
+	log.Debug("Adding entry to tbl", "db_id", t.DBId, "name", t.Name, "target", target, "regex", regex)
 	_, err = ConfigDB.Exec(
-		`INSERT INTO tbl(db_id, name, type, target) VALUES (?, ?, ?, ?)`,
-		t.DBId, t.Name, "clone", t.Name)
+		`INSERT INTO tbl(db_id, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?)`,
+		t.DBId, t.Name, tabletype, target, regex)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "cannot add entry to tbl", err)
 		return

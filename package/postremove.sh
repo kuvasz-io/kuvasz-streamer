@@ -1,2 +1,4 @@
 #!/bin/bash
-systemctl daemon-reload
+if test -d /run/systemd/system; then
+    systemctl daemon-reload
+fi
