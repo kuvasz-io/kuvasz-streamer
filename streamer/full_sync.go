@@ -63,6 +63,7 @@ func writeDestination(log *slog.Logger, tableName string, columns string, s *syn
 }
 
 func syncTable(log *slog.Logger,
+	db string,
 	sid string,
 	sourceTableName string,
 	destTableName string,
@@ -78,8 +79,8 @@ func syncTable(log *slog.Logger,
 		log:             log,
 		CommandChannel:  commandChannel,
 		SyncDataChannel: syncDataChannel,
-		rowsTotal:       syncRowsTotal.WithLabelValues("db", sid, sourceTableName),
-		bytesTotal:      syncBytesTotal.WithLabelValues("db", sid, sourceTableName),
+		rowsTotal:       syncRowsTotal.WithLabelValues(db, sid, sourceTableName),
+		bytesTotal:      syncBytesTotal.WithLabelValues(db, sid, sourceTableName),
 	}
 
 	// Prepare column list
@@ -117,6 +118,7 @@ func syncTable(log *slog.Logger,
 
 func syncAllTables(
 	log *slog.Logger,
+	db string,
 	sid string,
 	sourceTables map[string]SourceTable,
 	sourceConnection *pgconn.PgConn) error {
@@ -127,13 +129,14 @@ func syncAllTables(
 			return err
 		}
 		log.Info("Syncing", "sourceTable", sourceTableName, "destTable", destTableName)
-		_ = syncTable(log, sid, sourceTableName, destTableName, sourceConnection)
+		_ = syncTable(log, db, sid, sourceTableName, destTableName, sourceConnection)
 	}
 	return nil
 }
 
 func syncNewTables(
 	log *slog.Logger,
+	db string,
 	sid string,
 	sourceTables map[string]SourceTable,
 	newTables []string,
@@ -145,7 +148,7 @@ func syncNewTables(
 			return err
 		}
 		log.Info("Syncing", "sourceTable", newTables[i], "destTable", destTableName)
-		_ = syncTable(log, sid, newTables[i], destTableName, sourceConnection)
+		_ = syncTable(log, db, sid, newTables[i], destTableName, sourceConnection)
 	}
 	return nil
 }

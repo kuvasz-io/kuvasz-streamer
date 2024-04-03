@@ -45,8 +45,7 @@ EOF
 ### Install `kuvasz-streamer`
 
 ```bash
-dnf update
-dnf install -y kuvasz-streamer
+sudo dnf install -y kuvasz-streamer
 ```
 
 ## Install manually

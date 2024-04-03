@@ -89,8 +89,8 @@ More information can be found in this [Wikipedia Article](https://en.wikipedia.o
 
 |sid|id|first_name|last_name|salary|kvsz_start|kvsz_end|kvsz_deleted|
 |---|--|----------|---------|------|----------|--------|------------|
-|1|1|John|Doe|1000|1900-01-01|2024-01-01|false
-|1|1|John|Doe|1000|2024-01-01|9999-01-01|false
+|1|1|John|Doe|1000|1900-01-01|2023-01-01|false
+|1|1|John|Doe|1200|2023-01-01|9999-01-01|false
 
 ### Update record on 2024-01-01, salary=2000
 

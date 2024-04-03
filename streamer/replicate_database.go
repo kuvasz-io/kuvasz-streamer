@@ -217,14 +217,14 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 
 	// Perform full table sync if slot was just created
 	if !oldSlot {
-		err := syncAllTables(log, url.SID, database.Tables, replConn)
+		err := syncAllTables(log, database.Name, url.SID, database.Tables, replConn)
 		if err != nil {
 			return fmt.Errorf("cannot perform initial sync, error=%w", err)
 		}
 		log.Debug("Finished full table sync")
 		time.Sleep(time.Duration(config.Maintenance.StartDelay) * time.Second)
 	} else {
-		err := syncNewTables(log, url.SID, database.Tables, newTables, replConn)
+		err := syncNewTables(log, database.Name, url.SID, database.Tables, newTables, replConn)
 		if err != nil {
 			return fmt.Errorf("cannot perform initial sync for new tables, error=%w", err)
 		}
