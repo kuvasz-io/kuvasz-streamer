@@ -64,5 +64,7 @@ create table t6(sid text, id int, name text, longvalue text);
 create table t7(sid text, id int, name text) partition by range(id);
 create table t7_0 partition of t7 for values from (0)to (19);
 create table t7_2 partition of t7 for values from (20) to (39);
+create table t8(sid text, id int, name text);
+create table pt8(sid text, id int, name text);
 
 create table s1(sid text, id int, name text, salary int, garbage date);

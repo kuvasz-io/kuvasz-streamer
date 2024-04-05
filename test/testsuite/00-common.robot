@@ -22,6 +22,8 @@ Connect To All Databases
         Execute SQL string    truncate t5 restart identity
         Execute SQL string    truncate t6 restart identity
         Execute SQL string    truncate t7 restart identity
+        Execute SQL string    truncate t8 restart identity
+        Execute SQL string    truncate private.t8 restart identity
         Set Auto Commit
     END
     Connect To Database       psycopg2    dest   kuvasz    kuvasz    127.0.0.1    6012    alias=dest
@@ -32,6 +34,8 @@ Connect To All Databases
     Execute SQL string        truncate t5 restart identity
     Execute SQL string        truncate t6 restart identity
     Execute SQL string        truncate t7 restart identity
+    Execute SQL string        truncate t8 restart identity
+    Execute SQL string        truncate pt8 restart identity
     Set Auto Commit
 
 Prepare db3
@@ -123,4 +127,4 @@ Clone table
     Clear Expectations     
     Set Headers                  ${admin}
     POST                         /api/url/restart
-    Sleep                        3
+    Sleep                        5

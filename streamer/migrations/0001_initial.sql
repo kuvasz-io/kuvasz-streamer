@@ -1,7 +1,8 @@
 -- +goose Up
 create table db(
     db_id integer primary key, 
-    name text not null unique);
+    name text not null unique
+);
 
 create table url(
     url_id  integer primary key,
@@ -14,11 +15,12 @@ create table url(
 create table tbl(
     tbl_id           integer primary key,
     db_id            integer not null references db(db_id), 
+    schema           text    not null default 'public',
     name             text    not null, 
     type             text    not null,
     target           text    not null,
     partitions_regex text    null,
-    unique (db_id, name)
+    unique (db_id, schema, name)
 );
 
 pragma foreign_keys=ON;

@@ -3,109 +3,109 @@ Resource      00-common.robot
 
 *** Test cases ***
 
-GET existing url by id should succeed
+GET existing tbl by id should succeed
     Clear Expectations
-    Expect Response Body    ${SCHEMA}/url.json
+    Expect Response Body    ${SCHEMA}/tbl.json
     Set Headers             ${admin}
-    GET                     /api/url/1
+    GET                     /api/tbl/1
     Integer                 response status                 200
     Integer                 response body id                1
     Integer                 response body db_id             1
     String                  response body db_name           db1
 
-GET non existing url by id should fail
+GET non existing tbl by id should fail
     Clear Expectations
     Set Headers             ${admin}
-    GET                     /api/url/99
+    GET                     /api/tbl/99
     Integer                 response status                 404
 
-GET url by invalid id should fail
+GET tbl by invalid id should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    GET                     /api/url/dskjhfkdsjfgh
+    GET                     /api/tbl/dskjhfkdsjfgh
     Integer                 response status                 400
 
-GET all urls should succeed
+GET all tbls should succeed
     Clear Expectations
     Set Headers             ${admin}
-    Expect Response Body    ${schema}/urls.json
-    GET                     /api/url
+    Expect Response Body    ${schema}/tbls.json
+    GET                     /api/tbl
     Integer                 response status                 200
-    Array                   response body                   minItems=10  maxItems=10
+    Array                   response body                   minItems=11  maxItems=11
 
-Create url should succeed
+Create tbl should succeed
     Clear Expectations
     Set Headers             ${admin}
-    Expect Response Body    ${schema}/url.json
-    POST                    /api/url                        {"db_id": 3, "sid": "12", "url":"postgres://user:password@127.0.0.1/db3" }
+    Expect Response Body    ${schema}/tbl.json
+    POST                    /api/tbl                        {"db_id":3,"name":"foo","type":"clone","target":"blah"} 
     Integer                 response status                 200
-    String                  response body sid               12
+    Integer                 response body db_id             3
 
-Create url with missing parameters should fail
+Create tbl with missing parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    POST                    /api/url                        {"db_id": 3, "product_name": "vm-xl-2"}
+    POST                    /api/tbl                        {"db_id": 3, "product_name": "vm-xl-2"}
     Integer                 response status                 400
 
-Create url with invalid parameters should fail
+Create tbl with invalid parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    POST                    /api/url                        {"db_id": "toto", "sid": "12", "url":"postgres://user:password@127.0.0.1/db3" }
+    POST                    /api/tbl                        {"db_id": "toto", "sid": "12", "tbl":"postgres://user:password@127.0.0.1/db3" }
     Integer                 response status                 400
 
-Modify url should succeed
+Modify tbl should succeed
     Clear Expectations
     Set Headers             ${admin}
-    Expect Response Body    ${schema}/url.json
-    PUT                     /api/url/16                      {"db_id": 3, "sid": "13", "url":"postgres://user:password@127.0.0.1/db3" }
+    Expect Response Body    ${schema}/tbl.json
+    PUT                     /api/tbl/12                     {"db_id":3,"schema":"public","name":"bar","type":"clone","target":"bar"}
     Integer                 response status                 200
-    String                  response body sid               13
+    String                  response body name              bar
     
-Modify url with missing parameters should fail
+Modify tbl with missing parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/url/16                     {"product_name": "vm-xl-2"}
+    PUT                     /api/tbl/12                     {"db_id":3,"name":"bar","type":"clone"}
     Integer                 response status                 400
 
-Modify url with invalid parameters should fail
+Modify tbl with invalid parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/url/16                     {"sid": 123}
+    PUT                     /api/tbl/12                     {"db_id":3,"schema":"public","name":123,"type":"clone","target":"bar"}
     Integer                 response status                 400
 
-Modify non existing url should fail
+Modify non existing tbl should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/url/99                     {"db_id": 3, "sid": "13", "url":"postgres://user:password@127.0.0.1/db3" }
+    PUT                     /api/tbl/99                     {"db_id":3,"schema":"public","name":"bar","type":"clone","target":"bar"}
     Integer                 response status                 404
 
-Modify url with invalid id should fail
+Modify tbl with invalid id should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/url/sdlkfgjh                {"sid": "12"}
+    PUT                     /api/tbl/sdlkfgjh               {"db_id":3,"name":"bar","type":"clone","target":"bar"}
     Integer                 response status                 400
 
-Delete existing url should succeed
+Delete existing tbl should succeed
     Clear Expectations
     Set Headers             ${admin}
-    DELETE                  /api/url/16
+    DELETE                  /api/tbl/12
     Integer                 response status                 200
 
-Delete non-existing url should fail
+Delete non-existing tbl should fail
     Clear Expectations
     Set Headers             ${admin}
-    DELETE                  /api/url/44
+    DELETE                  /api/tbl/44
     Integer                 response status                 404
 
-Delete invalid url_id should fail
+Delete invalid tbl_id should fail
     Clear Expectations
     Set Headers             ${admin}
-    DELETE                  /api/url/sdkjfgh
+    DELETE                  /api/tbl/sdkjfgh
     Integer                 response status                 400

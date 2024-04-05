@@ -88,7 +88,7 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	// err = app.Validate.Struct(item)
 	if item.Name == "" {
-		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "Missing name", nil)
+		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "Missing name or schema", nil)
 		return
 	}
 	log.Debug("Creating db", "item", item)
@@ -152,7 +152,7 @@ func dbPutOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if item.Name == "" {
-		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "missing mandatory fields: name", nil)
+		req.ReturnError(w, http.StatusBadRequest, "invalid_request", "missing mandatory fields: name, schema", nil)
 		return
 	}
 	log.Debug("Updating db", "item", item)

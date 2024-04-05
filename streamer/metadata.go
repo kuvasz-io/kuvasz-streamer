@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -30,16 +31,24 @@ type (
 	PGRelations map[uint32]PGRelation
 )
 
-func getPrimaryKey(log *slog.Logger, database *pgx.Conn, schemaName string, tableName string) (map[string]bool, error) {
+func splitSchema(t string) (string, string) {
+	before, after, found := strings.Cut(t, ".")
+	if found {
+		return before, after
+	}
+	return config.App.DefaultSchema, t
+}
+
+func joinSchema(schema, table string) string {
+	if schema == "" {
+		return table
+	}
+	return schema + "." + table
+}
+
+func getPrimaryKey(log *slog.Logger, database *pgx.Conn, tableName string) (map[string]bool, error) {
 	result := make(map[string]bool)
-	// query := `SELECT c.column_name FROM information_schema.table_constraints tc
-	// 		  JOIN information_schema.constraint_column_usage AS ccu USING (constraint_schema, constraint_name)
-	// 		  JOIN information_schema.columns AS c
-	// 		    ON c.table_schema = tc.constraint_schema  AND tc.table_name = c.table_name AND ccu.column_name = c.column_name
-	// 		  WHERE constraint_type = 'PRIMARY KEY'
-	// 		  	and tc.constraint_catalog =current_database()
-	// 			and c.table_schema = $1
-	// 			and tc.table_name = $2`
+	s, t := splitSchema(tableName)
 	query := `SELECT a.attname 
 	FROM pg_index i 
 		JOIN pg_class c ON c.oid = i.indrelid 
@@ -48,7 +57,7 @@ func getPrimaryKey(log *slog.Logger, database *pgx.Conn, schemaName string, tabl
 	WHERE c.relname = $1 
 		AND n.nspname = $2
 		AND i.indisprimary;`
-	pkRows, err := database.Query(context.Background(), query, tableName, schemaName)
+	pkRows, err := database.Query(context.Background(), query, t, s)
 	if err != nil {
 		log.Error("cannot get primary keys", "error", err)
 		return result, fmt.Errorf("cannot get primary keys, table=%s, error=%w", tableName, err)
@@ -72,7 +81,7 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 				SELECT inhparent as table, array_agg (inhrelid::pg_catalog.regclass) as partitions
 				FROM pg_catalog.pg_inherits
 				GROUP BY 1) 
-			  SELECT c.table_name, c.column_name, c.udt_name, t.oid, p.partitions
+			  SELECT c.table_schema, c.table_name, c.column_name, c.udt_name, t.oid, p.partitions
 				  FROM information_schema.columns as c
 					  INNER JOIN pg_type as t ON c.udt_name=t.typname
 					  INNER JOIN pg_catalog.pg_class as pg ON pg.relname=c.table_name
@@ -80,7 +89,9 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 				  WHERE c.table_catalog=current_database() 
 					and not pg.relispartition
 					and pg.relkind in ('r', 'p')
-					and c.table_schema=$1;`
+					and c.table_schema like $1
+					and c.table_schema not like 'pg_%'
+					and c.table_schema <> 'information_schema';`
 
 	pgTables := make(PGTables)
 	if database == nil {
@@ -95,14 +106,15 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 	defer rows.Close()
 
 	for rows.Next() {
-		var tableName string
+		var s, t string
 		var pgColumn PGColumn
 		var columnName string
 		var partitions []string
-		err = rows.Scan(&tableName, &columnName, &pgColumn.ColumnType, &pgColumn.DataTypeOID, &partitions)
+		err = rows.Scan(&s, &t, &columnName, &pgColumn.ColumnType, &pgColumn.DataTypeOID, &partitions)
 		if err != nil {
 			return pgTables, fmt.Errorf("can't map row to values, schema=%s, error=%w", schemaName, err)
 		}
+		tableName := joinSchema(s, t)
 		pgTable, ok := pgTables[tableName]
 		if !ok {
 			pgTable.Partitions = partitions
@@ -119,7 +131,7 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 	// Assign primary keys
 	for tableName, pgTable := range pgTables {
 		var pk map[string]bool
-		pk, err = getPrimaryKey(log, database, schemaName, tableName)
+		pk, err = getPrimaryKey(log, database, tableName)
 		if err != nil {
 			return pgTables, err
 		}
@@ -153,7 +165,7 @@ func SetupDestination() error {
 		return fmt.Errorf("can't get destination table metadata: error=%w", err)
 	}
 	defer conn.Release()
-	DestTables, err = GetTables(log, conn.Conn(), "public")
+	DestTables, err = GetTables(log, conn.Conn(), config.Database.Schema)
 	if err != nil {
 		return fmt.Errorf("can't get destination table metadata, error=%w", err)
 	}

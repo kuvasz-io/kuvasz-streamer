@@ -185,7 +185,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	var newTables []string
 	//nolint:nestif // this cannot be really simplified
 	if publication == 1 && slot == 1 {
-		newTables, err = SyncPublications(log, conn, database, "public")
+		newTables, err = SyncPublications(log, conn, database)
 		if err != nil {
 			return fmt.Errorf("cannot sync publications: %w", err)
 		}

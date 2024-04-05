@@ -36,7 +36,7 @@ GET full map should succeed
     Expect Response Body    ${schema}/maps.json
     GET                     /api/map
     Integer                 response status                 200
-    Array                   response body                   minItems=9  maxItems=9
+    Array                   response body                   minItems=11  maxItems=11
 
 Add database and refresh map
     Prepare db3
@@ -61,7 +61,7 @@ Clone non existing table u0
     Switch database         db3
     Execute SQL string      create table u0(id serial, name text)
 
-    Clone table             u0                              9    \
+    Clone table             u0                              11    \
     
 Insert row in u0
     Switch Database              db3
@@ -77,7 +77,7 @@ Clone existing table u1
     Execute SQL string           create table u1(id serial, name text)
     Switch database              dest
     Execute SQL string           create table u1(sid text, id int, name text)
-    Clone table                  u1                              10    \
+    Clone table                  u1                              12    \
 
 Insert row in u1
     Switch Database              db3
@@ -95,7 +95,7 @@ Clone non-existing table with pre-existing data u2
     Execute SQL string      insert into u2(name) values('foo2')
     Execute SQL string      insert into u2(name) values('foo3')
     Execute SQL string      insert into u2(name) values('foo4')
-    Clone table             u2                             11      \
+    Clone table             u2                             13      \
 
 Insert row in u2
     Switch Database              db3
@@ -117,7 +117,7 @@ Clone partitioned table u3
     Execute SQL string      create table u3_1 partition of u3 for values from (10) to (19)
     Execute SQL string      create table u3_2 partition of u3 for values from (20) to (29)
     Execute SQL string      create table u3_3 partition of u3 for values from (30) to (39)
-    Clone table             u3                             12       ?partitions_regex=u3_.*
+    Clone table             u3                             14       ?partitions_regex=u3_.*
 
 Insert row in u3
     Switch Database              db3
@@ -135,7 +135,7 @@ Clone renamed and partitioned table u4
     Execute SQL string      create table u4_1 partition of u4 for values from (10) to (19)
     Execute SQL string      create table u4_2 partition of u4 for values from (20) to (29)
     Execute SQL string      create table u4_3 partition of u4 for values from (30) to (39)
-    Clone table             u4                             13       ?partitions_regex=u4_.*&target=u4p
+    Clone table             u4                             15       ?partitions_regex=u4_.*&target=u4p
 
 Insert row in u4
     Switch Database              db3
@@ -149,7 +149,7 @@ Clone append, renamed table u5
     # Create table
     Switch database         db3
     Execute SQL string      create table u5(id int primary key, name text)
-    Clone table             u5                             14       ?target=u5p&type=append
+    Clone table             u5                             16       ?target=u5p&type=append
 
 Insert row in u5
     Switch Database              db3

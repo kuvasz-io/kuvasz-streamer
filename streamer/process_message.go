@@ -152,7 +152,7 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
 			log.Error(err.Error())
 			return
@@ -188,7 +188,7 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
 			log.Error(err.Error())
 			return
@@ -200,11 +200,11 @@ func processMessage(
 		op.values = getValues(rel, m.NewTuple.Columns, typeMap)
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
-		op.relation = relations[m.RelationID]
+		op.relation = rel
 		op.id = sourceTable.ID
 		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
-		if sourceTables[rel.RelationName].Type == TableTypeHistory {
-			err = op.updateHistory(destTable, relations[m.RelationID], op.values, op.old, op.oldValues)
+		if sourceTable.Type == TableTypeHistory {
+			err = op.updateHistory(destTable, rel, op.values, op.old, op.oldValues)
 		} else {
 			op.opCode = "uc"
 			SendWork(op)
@@ -227,7 +227,7 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err = MapSourceTable(rel.RelationName, sourceTables)
+		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
 			log.Error("cannot map source table", "error", err.Error())
 			return

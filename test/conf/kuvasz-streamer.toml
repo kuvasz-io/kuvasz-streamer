@@ -20,6 +20,7 @@ source=false
 
 [database]
 url = "postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=kuvasz-streamer"
+schema = "public"
 
 [app]
 map_file = "./conf/map.yaml"

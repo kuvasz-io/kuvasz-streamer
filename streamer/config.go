@@ -30,14 +30,16 @@ type (
 		StartDelay int    `koanf:"start_delay"`
 	}
 	DatabaseConfig struct {
-		URL string `koanf:"url"`
+		URL    string `koanf:"url"`
+		Schema string `koanf:"schema"`
 	}
 
 	AppConfig struct {
-		MapFile     string  `koanf:"map_file"`
-		MapDatabase string  `koanf:"map_database"`
-		NumWorkers  int     `koanf:"num_workers"`
-		CommitDelay float64 `koanf:"commit_delay"`
+		MapFile       string  `koanf:"map_file"`
+		MapDatabase   string  `koanf:"map_database"`
+		NumWorkers    int     `koanf:"num_workers"`
+		CommitDelay   float64 `koanf:"commit_delay"`
+		DefaultSchema string  `koanf:"default_schema"`
 	}
 
 	CORSConfig struct {
@@ -73,13 +75,15 @@ var config = Config{
 	},
 	Logs: defaultLogsConfig,
 	Database: DatabaseConfig{
-		URL: "",
+		URL:    "",
+		Schema: "public",
 	},
 	App: AppConfig{
-		MapFile:     "/etc/kuvasz/map.yaml",
-		MapDatabase: "",
-		NumWorkers:  2,
-		CommitDelay: 1.0,
+		MapFile:       "/etc/kuvasz/map.yaml",
+		MapDatabase:   "",
+		NumWorkers:    2,
+		CommitDelay:   1.0,
+		DefaultSchema: "public",
 	},
 	Cors: CORSConfig{
 		AllowedOrigins: []string{"*"},

@@ -244,7 +244,7 @@ func StatusMiddleware(next http.Handler) http.Handler {
 		if Status != "active" && strings.HasPrefix(r.URL.Path, "/api") {
 			req := PrepareReq(w, r)
 			log.Error("Server is not ready", "status", Status)
-			req.ReturnError(w, 400, "not_ready", fmt.Sprintf("server not ready: %s", Status), nil)
+			req.ReturnError(w, 400, "not_ready", "server not ready: "+Status, nil)
 			return
 		}
 		next.ServeHTTP(w, r)

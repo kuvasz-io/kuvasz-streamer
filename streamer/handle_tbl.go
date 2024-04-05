@@ -12,6 +12,7 @@ type tbl struct {
 	ID              int64   `json:"id"`
 	DBId            int64   `json:"db_id"`
 	DBName          string  `json:"db_name"`
+	Schema          string  `json:"schema"`
 	Name            string  `json:"name"`
 	Type            string  `json:"type"`
 	Target          string  `json:"target"`
@@ -21,6 +22,7 @@ type tbl struct {
 var tblColumns = map[string]string{
 	"id":               "tbl.tbl_id",
 	"db_id":            "tbl.db_id",
+	"schema":           "tbl.schema",
 	"name":             "tbl.name",
 	"type":             "tbl.type",
 	"target":           "tbl.target",
@@ -38,10 +40,10 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = ConfigDB.QueryRow(
-		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
+		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.schema, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id
 		WHERE tbl_id = ?`,
-		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+		id).Scan(&item.ID, &item.DBId, &item.DBName, &item.Schema, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 	if errors.Is(err, sql.ErrNoRows) {
 		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find table", nil)
 		return
@@ -60,7 +62,7 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 
 	m := ValuesToModifier(r.URL.Query(), tblColumns)
 	query := BuildQuery(
-		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
+		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.schema, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id`,
 		m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
@@ -72,7 +74,7 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 	for rows.Next() {
 		var item tbl
-		err := rows.Scan(&item.ID, &item.DBId, &item.DBName, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
+		err := rows.Scan(&item.ID, &item.DBId, &item.DBName, &item.Schema, &item.Name, &item.Type, &item.Target, &item.PartitionsRegex)
 		if err != nil {
 			req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't scan item", err)
 			return
@@ -110,8 +112,8 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	// err = app.Validate.Struct(item)
 
 	result, err := ConfigDB.Exec(
-		`INSERT INTO tbl(db_id, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?)`,
-		item.DBId, item.Name, item.Type, item.Target, item.PartitionsRegex)
+		`INSERT INTO tbl(db_id, schema, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?, ?)`,
+		item.DBId, item.Schema, item.Name, item.Type, item.Target, item.PartitionsRegex)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return
@@ -170,7 +172,7 @@ func tblPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// err = app.Validate.Struct(item)
-	if item.DBId == 0 || item.Name == "" || item.Type == "" || item.Target == "" {
+	if item.DBId == 0 || item.Schema == "" || item.Name == "" || item.Type == "" || item.Target == "" {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Missing parameters", nil)
 		return
 	}
@@ -178,8 +180,8 @@ func tblPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Updating tbl", "id", id, "item", item)
 
 	result, err := ConfigDB.Exec(
-		`UPDATE tbl set name=?, type=?, target=?, partitions_regex=? where tbl_id=?`,
-		item.Name, item.Type, item.Target, item.PartitionsRegex, id)
+		`UPDATE tbl set schema=?, name=?, type=?, target=?, partitions_regex=? where tbl_id=?`,
+		item.Schema, item.Name, item.Type, item.Target, item.PartitionsRegex, id)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return

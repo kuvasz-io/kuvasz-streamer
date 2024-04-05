@@ -23,6 +23,7 @@ export const TblList = () => (
             <ReferenceField source="db_id" reference="db"  label="DB">
                 <TextField source="name" />
             </ReferenceField>
+            <TextField source="schema" />
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -38,6 +39,7 @@ export const TblEdit = () => (
             <ReferenceField source="db_id" reference="db"  label="DB">
                 <TextField source="name" />
             </ReferenceField>
+            <TextInput source="schema" fullWidth />
             <TextInput source="name" fullWidth />
             <TableTypeInput />
             <TextInput source="target" fullWidth />
@@ -53,6 +55,7 @@ export const TblShow = () => (
             <ReferenceField source="db_id" reference="db"  label="DB">
                 <TextField source="name" />
             </ReferenceField>
+            <TextField source="schema" />
             <TextField source="name" />
             <TextField source="type" />
             <TextField source="target" />
@@ -67,6 +70,7 @@ export const TblCreate = () => (
             <ReferenceInput source="db_id" reference="db" label="DB" >
                 <SelectInput optionText="name"/>
             </ReferenceInput>
+            <TextInput source="schema" fullWidth />
             <TextInput source="name" fullWidth />
             <TableTypeInput />
             <TextInput source="target" fullWidth />

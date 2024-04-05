@@ -54,6 +54,7 @@ export const MapList = () => (
             <TextField source="id" sortable={false}/>
             <TextField source="db_id" label ="DB ID"sortable={false}/>
             <TextField source="db_name" label="Database" sortable={false}/>
+            <TextField source="schema" label="Schema" sortable={false}/>
             <TextField source="name" label="Table" sortable={false}/>
             <TextField source="type" sortable={false}/>
             <TextField source="target" sortable={false}/>
@@ -72,6 +73,7 @@ export const MapEdit = () => (
         <TextField source="id" />
             <TextField source="db_id" />
             <TextField source="name" />
+            <TextField source="schema" />
             <TextField source="type" />
             <TextField source="target" />
             <TextField source="partitions_regex" />

@@ -18,10 +18,10 @@ import (
 type (
 	DBMap          []SourceDatabase
 	SourceDatabase struct {
-		ID     int64                  `json:"db_id"`
-		Name   string                 `json:"database" yaml:"database"`
-		Urls   []SourceURL            `json:"urls"     yaml:"urls"`
-		Tables map[string]SourceTable `json:"tables"   yaml:"tables"`
+		ID     int64        `json:"db_id"`
+		Name   string       `json:"database" yaml:"database"`
+		Urls   []SourceURL  `json:"urls"     yaml:"urls"`
+		Tables SourceTables `json:"tables"   yaml:"tables"`
 	}
 	SourceURL struct {
 		ID             int64  `json:"url_id"`
@@ -37,12 +37,15 @@ type (
 		PartitionsRegex string `json:"partitions_regex" yaml:"partitions_regex,omitempty"`
 		compiledRegex   *regexp.Regexp
 	}
+	SourceTables map[string]SourceTable
 )
 
 type MappingEntry struct {
 	ID              int64               `json:"id"`
 	DBId            int64               `json:"db_id"`
 	DBName          string              `json:"db_name"`
+	Schema          string              `json:"schema"`
+	Table           string              `json:"table"`
 	Name            string              `json:"name"`
 	Type            string              `json:"type"`
 	Target          string              `json:"target"`
@@ -92,7 +95,7 @@ func ReadMapDatabase(db *sql.DB) (DBMap, error) {
 		  ),
 		  'tables', (
 			SELECT json_group_object(
-				t.name,
+				t.schema || "." || t.name,
 			  json_object(
 				'tbl_id', t.tbl_id,
 				'type', t.type,
@@ -118,32 +121,31 @@ func ReadMapDatabase(db *sql.DB) (DBMap, error) {
 	return fullMap, nil
 }
 
-func ReadMapFile(filename string) {
+func ReadMapFile(filename string) (DBMap, error) {
 	var err error
 	var data []byte
+	var m DBMap
 
 	// Read map
 	log := log.With("filename", filename)
 	log.Info("Reading map file")
 	data, err = os.ReadFile(filename)
 	if err != nil {
-		log.Error("Can't read map file", "error", err)
-		os.Exit(1)
+		return m, fmt.Errorf("can't read map file, error=%w", err)
 	}
-	err = yaml.Unmarshal(data, &dbmap)
+	err = yaml.Unmarshal(data, &m)
 	if err != nil {
-		log.Error("Can't unmarshal map file", "error", err)
-		os.Exit(1)
+		return m, fmt.Errorf("can't unmarshal map file, error=%w", err)
 	}
-	log.Info("Read map file", "map", dbmap)
+	log.Info("Read map file", "map", m)
 	log.Debug("Assigning IDs for yaml map file")
 	var dbid, urlid, tblid int64
 	dbid = 1
 	urlid = 1
 	tblid = 1
-	for k, db := range dbmap {
+	for k, db := range m {
 		db.ID = dbid
-		dbmap[k] = db
+		m[k] = db
 		dbid++
 		for k, url := range db.Urls {
 			url.ID = urlid
@@ -162,7 +164,25 @@ func ReadMapFile(filename string) {
 			tblid++
 		}
 	}
-	log.Info("Fixed map file", "map", dbmap)
+	log.Info("Fixed map file", "map", m)
+	return m, nil
+}
+
+func (m DBMap) CompileRegexes() {
+	log.Debug("Compiling partition regexes")
+	for _, db := range m {
+		for k, v := range db.Tables {
+			if v.PartitionsRegex != "" {
+				re, err := regexp.Compile(v.PartitionsRegex)
+				if err != nil {
+					log.Error("Invalid partition regex", "table", k, "regex", v.PartitionsRegex)
+					os.Exit(1)
+				}
+				v.compiledRegex = re
+			}
+			db.Tables[k] = v
+		}
+	}
 }
 
 func ReadMap() {
@@ -181,7 +201,11 @@ func ReadMap() {
 			os.Exit(1)
 		}
 	} else {
-		ReadMapFile(config.App.MapFile)
+		dbmap, err = ReadMapFile(config.App.MapFile)
+		if err != nil {
+			log.Error("Can't read map file, error=%w", err)
+			os.Exit(1)
+		}
 		err = RefreshMappingTable()
 		if err != nil {
 			log.Error("Can't refresh mapping table, error=%w", err)
@@ -190,51 +214,52 @@ func ReadMap() {
 	}
 }
 
-func CompileRegexes() {
-	log.Debug("Compiling partition regexes")
-	for _, db := range dbmap {
-		for k, v := range db.Tables {
-			if v.PartitionsRegex != "" {
-				re, err := regexp.Compile(v.PartitionsRegex)
-				if err != nil {
-					log.Error("Invalid partition regex", "table", k, "regex", v.PartitionsRegex)
-					os.Exit(1)
-				}
-				v.compiledRegex = re
-			}
-			db.Tables[k] = v
-		}
-	}
-}
-
-func FindSourceTable(relationName string, sourceTables map[string]SourceTable) string {
+func (s SourceTables) Find(t string) string {
 	// Quick path for exact match
-	_, ok := sourceTables[relationName]
+	_, ok := s[t]
 	if ok {
-		return relationName
+		return t
 	}
 	// Now try regex
-	for sourceTableName, sourceTable := range sourceTables {
+	for sourceTableName, sourceTable := range s {
 		if sourceTable.compiledRegex == nil {
 			continue
 		}
-		if sourceTable.compiledRegex.MatchString(relationName) {
+		if sourceTable.compiledRegex.MatchString(t) {
 			return sourceTableName
 		}
 	}
 	return ""
 }
 
-func findConfiguredTable(m DBMap, dbID int64, name string) SourceTable {
-	var t = SourceTable{}
+func (s SourceTables) GetTable(table string) (*SourceTable, string, error) {
+	var destTable string
+	log.Debug("GetTable", "table", table, "sourceTables", s, "DestTables", DestTables)
+	sourceTable := s.Find(table)
+	if sourceTable == "" {
+		return nil, "", fmt.Errorf("unconfigured source table=%s", table)
+	}
+	t := s[sourceTable]
+	if t.Target == "" {
+		destTable = sourceTable
+	} else {
+		destTable = joinSchema(config.App.DefaultSchema, t.Target)
+	}
+	_, ok := DestTables[destTable]
+	if !ok {
+		return nil, "", fmt.Errorf("destination table does not exist, table=%s", destTable)
+	}
+	return &t, destTable, nil
+}
+
+func (m DBMap) findConfiguredTable(dbID int64, name string) SourceTable {
 	for _, db := range m {
 		if db.ID != dbID {
 			continue
 		}
-		t = db.Tables[name]
-		return t
+		return db.Tables[name]
 	}
-	return t
+	return SourceTable{}
 }
 
 func getSourceTables(log *slog.Logger, s SourceDatabase) (PGTables, error) {
@@ -253,30 +278,11 @@ func getSourceTables(log *slog.Logger, s SourceDatabase) (PGTables, error) {
 		return PGTables{}, fmt.Errorf("error connecting to database=%s, error=%w", u.URL, err)
 	}
 	defer conn.Close(context.Background())
-	sourceTables, err := GetTables(log, conn, "public")
+	sourceTables, err := GetTables(log, conn, "%")
 	if err != nil {
 		return PGTables{}, fmt.Errorf("error getting tables, error=%w", err)
 	}
 	return sourceTables, nil
-}
-
-func MapSourceTable(relationName string, sourceTables map[string]SourceTable) (*SourceTable, string, error) {
-	var destTable string
-	sourceTable := FindSourceTable(relationName, sourceTables)
-	if sourceTable == "" {
-		return nil, "", fmt.Errorf("unconfigured source table=%s", relationName)
-	}
-	t := sourceTables[sourceTable]
-	if t.Target == "" {
-		destTable = sourceTable
-	} else {
-		destTable = t.Target
-	}
-	_, ok := DestTables[destTable]
-	if !ok {
-		return nil, "", fmt.Errorf("destination table does not exist, table=%s", destTable)
-	}
-	return &t, destTable, nil
 }
 
 func RefreshMappingTable() error {
@@ -288,7 +294,7 @@ func RefreshMappingTable() error {
 	}
 	defer destConn.Release()
 
-	DestTables, err = GetTables(log, destConn.Conn(), "public")
+	DestTables, err = GetTables(log, destConn.Conn(), config.Database.Schema)
 	if err != nil {
 		return fmt.Errorf("can't get destination table metadata, error=%w", err)
 	}
@@ -318,11 +324,13 @@ func RefreshMappingTable() error {
 			continue
 		}
 		for k := range sourceTables {
-			configuredTable := findConfiguredTable(configuredMap, db.ID, k)
+			configuredTable := configuredMap.findConfiguredTable(db.ID, k)
+			schema, table := splitSchema(k)
 			t := MappingEntry{
 				DBId:            db.ID,
 				DBName:          db.Name,
-				Name:            k,
+				Schema:          schema,
+				Name:            table,
 				Type:            configuredTable.Type,
 				Target:          configuredTable.Target,
 				Partitions:      sourceTables[k].Partitions,

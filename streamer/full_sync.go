@@ -120,11 +120,11 @@ func syncAllTables(
 	log *slog.Logger,
 	db string,
 	sid string,
-	sourceTables map[string]SourceTable,
+	sourceTables SourceTables,
 	sourceConnection *pgconn.PgConn) error {
 	log.Info("Starting full sync for all tables", "sourceTables", sourceTables)
 	for sourceTableName := range sourceTables {
-		_, destTableName, err := MapSourceTable(sourceTableName, sourceTables)
+		_, destTableName, err := sourceTables.GetTable(sourceTableName)
 		if err != nil {
 			return err
 		}
@@ -138,12 +138,12 @@ func syncNewTables(
 	log *slog.Logger,
 	db string,
 	sid string,
-	sourceTables map[string]SourceTable,
+	sourceTables SourceTables,
 	newTables []string,
 	sourceConnection *pgconn.PgConn) error {
 	log.Info("Starting full sync for new tables", "sourceTables", sourceTables)
 	for i := range newTables {
-		_, destTableName, err := MapSourceTable(newTables[i], sourceTables)
+		_, destTableName, err := sourceTables.GetTable(newTables[i])
 		if err != nil {
 			return err
 		}

@@ -14,6 +14,8 @@ insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(5, 1
 insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(6, 1,'t5', 'clone',  't5',  NULL);
 insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(7, 1,'t6', 'clone',  't6',  NULL);
 insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(8, 1,'t7', 'clone',  't7',  't7_.*');
+insert into tbl(tbl_id, db_id, schema, name, type, target, partitions_regex) values( 9, 1,'public',  't8', 'clone',  't8',   NULL);
+insert into tbl(tbl_id, db_id, schema, name, type, target, partitions_regex) values(10, 1,'private', 't8', 'clone',  'pt8',  NULL);
 
 insert into db(db_id, name) values(2, 'db2');
 
@@ -23,4 +25,4 @@ insert into url(url_id, db_id, url, sid) values(8, 2, 'postgres://kuvasz:kuvasz@
 insert into url(url_id, db_id, url, sid) values(9, 2, 'postgres://kuvasz:kuvasz@127.0.0.1:6015/db2?replication=database&application_name=repl_db2', '15');
 insert into url(url_id, db_id, url, sid) values(10,2, 'postgres://kuvasz:kuvasz@127.0.0.1:6016/db2?replication=database&application_name=repl_db2', '16');
 
-insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(9,  2,'s1', 'clone',  's1',  NULL);
+insert into tbl(tbl_id, db_id, name, type, target, partitions_regex) values(11,  2,'s1', 'clone',  's1',  NULL);

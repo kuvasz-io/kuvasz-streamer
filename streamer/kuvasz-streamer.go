@@ -81,7 +81,7 @@ func main() {
 			os.Exit(1)
 		}
 		ReadMap()
-		CompileRegexes()
+		dbmap.CompileRegexes()
 		// Create root context allowing cancellation of all goroutines
 		rootContext, rootCancel := context.WithCancel(context.Background())
 

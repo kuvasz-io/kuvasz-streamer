@@ -114,6 +114,7 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 	if target == "" {
 		target = t.Name
 	}
+	fullTargetName := joinSchema(config.App.DefaultSchema, target)
 
 	// extract regex
 	regex := r.URL.Query().Get("partitions_regex")
@@ -125,10 +126,10 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Debug("Replicating table", "name", t.Name, "type", tabletype, "target", target, "regex", regex)
+	log.Debug("Replicating table", "name", t.Name, "type", tabletype, "target", target, "regex", regex, "DestTables", DestTables)
 
 	// Create table if not present
-	if _, ok := DestTables[target]; !ok {
+	if _, ok := DestTables[fullTargetName]; !ok {
 		q := "CREATE TABLE " + target + "(sid text"
 		for k, v := range t.SourceColumns {
 			q += ", " + k + " " + v.ColumnType
@@ -145,8 +146,8 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 	// Now add it to config
 	log.Debug("Adding entry to tbl", "db_id", t.DBId, "name", t.Name, "target", target, "regex", regex)
 	_, err = ConfigDB.Exec(
-		`INSERT INTO tbl(db_id, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?)`,
-		t.DBId, t.Name, tabletype, target, regex)
+		`INSERT INTO tbl(db_id, schema, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?, ?)`,
+		t.DBId, t.Schema, t.Name, tabletype, target, regex)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "cannot add entry to tbl", err)
 		return

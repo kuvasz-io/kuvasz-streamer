@@ -16,6 +16,11 @@
             "description": "Database name",
             "example": "wordpress"
         },
+        "schema": {
+            "type": "string",
+            "description": "schema name",
+            "example": "public"
+        },
         "name": {
             "type": "string",
             "description": "table name",
