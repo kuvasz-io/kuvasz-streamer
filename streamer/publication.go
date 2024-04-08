@@ -36,20 +36,11 @@ func makePublication(database SourceDatabase) string {
 	if len(database.Tables) == 0 {
 		return ""
 	}
-	p := " for table "
-	for i := range MappingTable {
-		// Check table is being replicated and belongs to us
-		if !MappingTable[i].Replicated || (MappingTable[i].DBName != database.Name) {
-			continue
-		}
-		// if this is a partitioned table, add all partitions
-		if len(MappingTable[i].Partitions) > 0 {
-			p += strings.Join(MappingTable[i].Partitions, ", ") + ", "
-		} else {
-			p = p + MappingTable[i].Name + ", "
-		}
+	p := findBaseTables(database.Name)
+	if len(p) == 0 {
+		return ""
 	}
-	return p[0 : len(p)-2]
+	return " for table " + strings.Join(p, ", ")
 }
 
 func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]string, error) {
