@@ -1,0 +1,30 @@
+[server]
+name = "kuvasz-streamer"
+address = ":8000"
+max_goroutines = 100
+read_timeout = 30
+read_header_timeout = 30
+write_timeout = 30
+idle_timeout = 30
+max_header_bytes = 1000
+
+[maintenance]
+pprof = "127.0.0.1:6060"
+start_delay = 5
+
+[logs]
+output="console"
+level="debug"
+format="text"
+source=false
+
+[database]
+url = "postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=kuvasz-streamer"
+schema = "public"
+
+[app]
+map_file = "./conf/rate.yaml"
+num_workers = 2
+commit_delay = 1.0
+sync_rate = 100
+sync_burst = 1

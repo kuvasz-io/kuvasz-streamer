@@ -11,6 +11,7 @@ import (
 	"github.com/knadh/koanf/providers/posflag"
 	"github.com/knadh/koanf/v2"
 	flag "github.com/spf13/pflag"
+	"golang.org/x/time/rate"
 )
 
 type (
@@ -35,11 +36,13 @@ type (
 	}
 
 	AppConfig struct {
-		MapFile       string  `koanf:"map_file"`
-		MapDatabase   string  `koanf:"map_database"`
-		NumWorkers    int     `koanf:"num_workers"`
-		CommitDelay   float64 `koanf:"commit_delay"`
-		DefaultSchema string  `koanf:"default_schema"`
+		MapFile       string     `koanf:"map_file"`
+		MapDatabase   string     `koanf:"map_database"`
+		NumWorkers    int        `koanf:"num_workers"`
+		CommitDelay   float64    `koanf:"commit_delay"`
+		DefaultSchema string     `koanf:"default_schema"`
+		SyncRate      rate.Limit `koanf:"sync_rate"`
+		SyncBurst     int        `koanf:"sync_burst"`
 	}
 
 	CORSConfig struct {
@@ -84,6 +87,8 @@ var config = Config{
 		NumWorkers:    2,
 		CommitDelay:   1.0,
 		DefaultSchema: "public",
+		SyncRate:      1_000_000_000,
+		SyncBurst:     1_000,
 	},
 	Cors: CORSConfig{
 		AllowedOrigins: []string{"*"},

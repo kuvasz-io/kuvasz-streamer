@@ -19,6 +19,7 @@ require (
 	github.com/prometheus/client_golang v1.18.0
 	github.com/prometheus/client_model v0.5.0
 	github.com/spf13/pflag v1.0.5
+	golang.org/x/time v0.5.0
 	gopkg.in/yaml.v2 v2.4.0
 )
 

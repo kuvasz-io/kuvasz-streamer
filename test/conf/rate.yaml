@@ -1,0 +1,6 @@
+- database: rate
+  urls:
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6012/rate
+    sid: 12
+  tables:
+    r0:

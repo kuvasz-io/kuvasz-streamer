@@ -13,6 +13,12 @@ Kuvasz-streamer is a lightweight service written in Go that has no dependencies 
 
 Kuvasz-streamer was benchmarked at 10K tps with less than 1 second latency. It uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later. It opens multiple connections to the destination database and batches updates into separate transactions.
 
+And in order not to overload a production database server, it also supports global rate-limiting.
+
+### Batteries included
+
+Kuvasz-streamer manages publications on source databases adding and deleting configured tables from the publication automatically. It also performs a full sync whenever a new table is added.
+
 ### Flexible
 
 Multiple table propagation models are supported: clone, history and append-only.

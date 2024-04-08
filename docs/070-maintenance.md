@@ -8,11 +8,6 @@ nav_order: 70
 
 The best way to monitor the replication state is to use `kuvasz-agent` and the associated Postgres Grafana dashboard.
 
-- To add a new table to a replication set
-    ```sql
-    ALTER PUBLICATION kvsz_DBNAME  ADD TABLE TABLENAME;
-    ```
-
 - To check the replication slots
     ```sql
     SELECT *

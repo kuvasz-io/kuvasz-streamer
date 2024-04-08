@@ -24,10 +24,28 @@ nav_order: 50
 |-------|---------|----|-------|-----------|
 |`server`|`name`|String|`kuvasz-streamer`|Server name to use in log shipping|
 |`server`|`address`|String|:8000|Server bind address|
-|`server`|`pprof`|String||Pprof bind adddress, typically `127.0.0.1:6060` when enabled|
-|`server`|`start_delay`|Integer|0|Testing only: delay between full sync and replication start|
+|`server`|`max_goroutines`|Integer|100|Number of concurrent API calls to process|
+|`server`|`read_timeout`|Integer|30|Maximum time (in seconds) allowed to send the whole request|
+|`server`|`read_header_timeout`|30|Integer|Maximum time (in seconds) allowed to send the header|
+|`server`|`write_timeout`|Integer|30|Maximum time (in seconds) allowed to write the whole response|
+|`server`|`idle_timeout`|Integer|30|Maximum time (in seconds) allowed between two requests on the same connection|
+|`server`|`max_header_bytes`|Integer|1000|Maximum size (in bytes) of the headers|
+|`maintenance`|`pprof`|String||Pprof bind adddress, typically `127.0.0.1:6060` when enabled|
+|`maintenance`|`start_delay`|Integer|0|Testing only: delay between full sync and replication start|
 |`database`|`url`|String||Destination database URL|
+|`database`|`schema`|String|`public`|Destination database schema to use|
+|`cors`|`allowed_origins`|Array of strings|Origin sites to allow, Use * for testing|
+|`cors`|`allow_methods`|String|`GET,POST,PATCH,PUT,DELETE`|Comma separated list of allowed methods, should not be changed|
+|`cors`|`allow_headers`|String|`Authorization,User-Agent,If-Modified-Since,Cache-Control,Content-Type,X-Total-Count`|Comma separated list of allowed headers, should not be changed|
+|`cors`|`max_age`|Integer|86400|Maximum time to use the CORS response in seconds|
 |`app`|`map_file`|String|`map.yaml`|Table mapping file|
+|`app`|`map_database`|String||Table mapping file|
+|`app`|`num_workers`|Integer|2|Number of workers writing to the destination database|
+|`app`|`commit_delay`|Float|1.0|Delay in seconds between commits on the destination database|
+|`app`|`default_schema`|String|`public`|Default schema in source database|
+|`app`|`sync_rate`|Float|1_000_000_000|Number of rows/second to read globally when doing a full sync in order not to overload the source database|
+|`app`|`sync_burst`|Integer|1000|Number of rows to burst in case of delays in writing rows in the destination|
+
 
 ## Mapping file
 

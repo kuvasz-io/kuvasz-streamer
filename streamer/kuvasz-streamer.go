@@ -12,6 +12,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/mattn/go-sqlite3"
+	"golang.org/x/time/rate"
 )
 
 const (
@@ -36,6 +37,7 @@ var (
 	RootChannel        chan string
 	wg                 sync.WaitGroup
 	Status             = StatusStarting
+	lim                *rate.Limiter
 
 	//go:embed migrations/*.sql
 	embedMigrations embed.FS
@@ -71,6 +73,9 @@ func main() {
 	// Start API Server
 	go APIServer(log)
 
+	// Start rate limiter
+	lim = rate.NewLimiter(config.App.SyncRate, config.App.SyncBurst)
+	_ = lim.Wait(context.Background()) // REMOVE ME
 	// Start main loop
 	RootChannel = make(chan string)
 	for {

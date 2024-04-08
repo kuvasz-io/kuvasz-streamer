@@ -37,6 +37,10 @@ func (s syncChannel) Read(p []byte) (int, error) {
 }
 
 func (s syncChannel) Write(p []byte) (int, error) {
+	err := lim.Wait(context.Background())
+	if err != nil {
+		return 0, fmt.Errorf("cannot wait for token, error=%w", err)
+	}
 	row := slices.Clone(p)
 	size += int64(len(row))
 	s.rowsTotal.Inc()

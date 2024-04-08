@@ -145,24 +145,27 @@ func ReadMapFile(filename string) (DBMap, error) {
 	tblid = 1
 	for k, db := range m {
 		db.ID = dbid
-		m[k] = db
 		dbid++
 		for k, url := range db.Urls {
 			url.ID = urlid
 			db.Urls[k] = url
 			urlid++
 		}
+		t := make(map[string]SourceTable)
 		for k, v := range db.Tables {
+			schema, table := splitSchema(k)
 			v.ID = tblid
 			if v.Type == "" {
 				v.Type = "clone"
 			}
 			if v.Target == "" {
-				v.Target = k
+				v.Target = table
 			}
-			db.Tables[k] = v
+			t[joinSchema(schema, table)] = v
 			tblid++
 		}
+		db.Tables = t
+		m[k] = db
 	}
 	log.Info("Fixed map file", "map", m)
 	return m, nil
@@ -243,7 +246,7 @@ func (s SourceTables) GetTable(table string) (*SourceTable, string, error) {
 	if t.Target == "" {
 		destTable = sourceTable
 	} else {
-		destTable = joinSchema(config.App.DefaultSchema, t.Target)
+		destTable = joinSchema(config.Database.Schema, t.Target)
 	}
 	_, ok := DestTables[destTable]
 	if !ok {

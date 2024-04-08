@@ -114,7 +114,7 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 	if target == "" {
 		target = t.Name
 	}
-	fullTargetName := joinSchema(config.App.DefaultSchema, target)
+	fullTargetName := joinSchema(config.Database.Schema, target)
 
 	// extract regex
 	regex := r.URL.Query().Get("partitions_regex")

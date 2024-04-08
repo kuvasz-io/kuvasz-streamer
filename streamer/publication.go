@@ -57,7 +57,8 @@ func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]st
 	ctx := context.Background()
 	publishedTables := mapset.NewSet[string]()
 
-	log.Debug("SyncPublications, step 1: remove unconfigured tables")
+	log.Debug("SyncPublications", "db", db)
+	log.Debug("SyncPublications, step 1: Find published tables")
 	// Fetch list of published tables
 	rows, err := conn.Query(
 		ctx,
@@ -74,20 +75,25 @@ func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]st
 			return newTables, fmt.Errorf("cannot scan table name, error: %w", err)
 		}
 		fullName := joinSchema(schema, table)
+		log.Debug("Found published table", "database", db.Name, "schema", schema, "table", table)
 		publishedTables.Add(fullName)
 		// remove from publication if not in MappingTable, checking for partitions
-		if db.Tables.Find(fullName) == "" {
-			log.Debug("Removing table from publication", "database", db.Name, "table", table)
-			_, err = conn.Exec(ctx, "ALTER PUBLICATION kuvasz_"+db.Name+" DROP TABLE "+table)
+	}
+	log.Debug("Published tables", "tables", publishedTables)
+	log.Debug("Configured tables", "tables", db.Tables)
+	log.Debug("SyncPublications, step 2: remove unconfigured tables")
+	for _, n := range publishedTables.ToSlice() {
+		if db.Tables.Find(n) == "" {
+			log.Debug("Removing table from publication", "database", db.Name, "schema", schema, "table", table)
+			_, err = conn.Exec(ctx, "ALTER PUBLICATION kuvasz_"+db.Name+" DROP TABLE "+n)
 			if err != nil {
 				return newTables, fmt.Errorf("cannot alter publication, error: %w", err)
 			}
 		}
 	}
-	log.Debug("Published tables", "tables", publishedTables)
-	log.Debug("Configured tables", "tables", db.Tables)
+
 	// Now add tables missing from publication
-	log.Debug("SyncPublications, step 2: add missing tables")
+	log.Debug("SyncPublications, step 3: add missing tables")
 	p := findBaseTables(db.Name)
 	log.Debug("Got base tables, scanning for missing ones", "basetables", p)
 	for i := range p {
