@@ -239,7 +239,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 		ctx,
 		replConn,
 		slotName,
-		lsn,
+		lsn+1,
 		pglogrepl.StartReplicationOptions{
 			Timeline:   0,
 			Mode:       pglogrepl.LogicalReplication,
@@ -250,8 +250,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	log.Info("Started logical replication slot", "slotname", slotName, "lsn", lsn)
 
 	// Start streaming and processing messages
-	clientXLogPos := sysident.XLogPos
-	standbyMessageTimeout := time.Second * 10
+	standbyMessageTimeout := time.Second * 1
 	nextStandbyMessageDeadline := time.Now().Add(standbyMessageTimeout)
 	relations := PGRelations{}
 	typeMap := pgtype.NewMap()
@@ -259,25 +258,31 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	// whenever we get StreamStartMessage we set inStream to true and then pass it to DecodeV2 function
 	// on StreamStopMessage we set it back to false
 	inStream := false
+	transactionLSN := pglogrepl.LSN(0)
+	committedTransactionLSN := lsn
+	SetCommittedLSN(database.Name, url.SID, lsn)
 
 	for {
 		urlHeartbeat.WithLabelValues(database.Name, url.SID).Set(float64(time.Now().Unix()))
 
 		if time.Now().After(nextStandbyMessageDeadline) {
-			err = pglogrepl.SendStandbyStatusUpdate(
-				ctx,
-				replConn,
-				pglogrepl.StandbyStatusUpdate{
-					WALWritePosition: clientXLogPos,
-					WALFlushPosition: clientXLogPos,
-					WALApplyPosition: clientXLogPos,
-					ClientTime:       time.Now(),
-					ReplyRequested:   false,
-				})
-			if err != nil {
-				return fmt.Errorf("cannot send SendStandbyStatusUpdate, error=%w", err)
+			clientXLogPos := GetCommittedLSN(database.Name, url.SID, committedTransactionLSN)
+			if clientXLogPos != 0 {
+				err = pglogrepl.SendStandbyStatusUpdate(
+					ctx,
+					replConn,
+					pglogrepl.StandbyStatusUpdate{
+						WALWritePosition: clientXLogPos,
+						WALFlushPosition: clientXLogPos,
+						WALApplyPosition: clientXLogPos,
+						ClientTime:       time.Now(),
+						ReplyRequested:   false,
+					})
+				if err != nil {
+					return fmt.Errorf("cannot send SendStandbyStatusUpdate, error=%w", err)
+				}
+				log.Debug("Sent Standby status message", "pos", clientXLogPos.String())
 			}
-			log.Debug("Sent Standby status message", "pos", clientXLogPos.String())
 			nextStandbyMessageDeadline = time.Now().Add(standbyMessageTimeout)
 		}
 
@@ -315,9 +320,6 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 				"ServerWALEnd", pkm.ServerWALEnd,
 				"ServerTime", pkm.ServerTime,
 				"ReplyRequested", pkm.ReplyRequested)
-			if pkm.ServerWALEnd > clientXLogPos {
-				clientXLogPos = pkm.ServerWALEnd
-			}
 			if pkm.ReplyRequested {
 				nextStandbyMessageDeadline = time.Time{}
 			}
@@ -329,11 +331,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 			}
 
 			log.Debug("XLogData", "WALStart", xld.WALStart, "ServerWALEnd", xld.ServerWALEnd, "ServerTime", xld.ServerTime)
-			processMessage(log, database, *url, protocolVersion, xld.WALData, relations, typeMap, &inStream)
-
-			if xld.WALStart > clientXLogPos {
-				clientXLogPos = xld.WALStart
-			}
+			processMessage(log, database, *url, protocolVersion, xld, relations, typeMap, &transactionLSN, &committedTransactionLSN, &inStream)
 		}
 	}
 }

@@ -19,10 +19,10 @@ format="text"
 source=false
 
 [database]
-url = "postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=kuvasz-streamer"
+url = "postgres://kuvasz:kuvasz@127.0.0.1/dest?application_name=kuvasz-streamer"
 schema = "public"
 
 [app]
-map_database = "kuvasz-streamer.db"
+map_database = "kuvasz-streamer-lite.db"
 num_workers = 2
 commit_delay = 10.0

@@ -22,6 +22,7 @@ type (
 		values      map[string]any
 		old         uint8
 		oldValues   map[string]any
+		lsn         pglogrepl.LSN
 	}
 )
 
@@ -79,9 +80,11 @@ func processMessage(
 	database SourceDatabase,
 	url SourceURL,
 	version int,
-	walData []byte,
+	xld pglogrepl.XLogData,
 	relations PGRelations,
 	typeMap *pgtype.Map,
+	transactionLSN *pglogrepl.LSN,
+	committedTransactionLSN *pglogrepl.LSN,
 	inStream *bool) {
 	var sourceTable *SourceTable
 	var destTable string
@@ -91,8 +94,10 @@ func processMessage(
 		log:      log,
 		database: database.Name,
 		sid:      url.SID,
+		lsn:      *transactionLSN,
 	}
 	sourceTables := database.Tables
+	walData := xld.WALData
 	switch version {
 	case 1:
 		logicalMsg, err = pglogrepl.Parse(walData)
@@ -108,7 +113,9 @@ func processMessage(
 	log.Debug("XLogData", "version", version, "type", logicalMsg.Type(), "message", logicalMsg)
 	switch logicalMsg := logicalMsg.(type) {
 	case *pglogrepl.BeginMessage:
+		*transactionLSN = logicalMsg.FinalLSN
 	case *pglogrepl.CommitMessage:
+		*committedTransactionLSN = *transactionLSN
 	case *pglogrepl.TypeMessage:
 	case *pglogrepl.OriginMessage:
 	case *pglogrepl.LogicalDecodingMessage:
