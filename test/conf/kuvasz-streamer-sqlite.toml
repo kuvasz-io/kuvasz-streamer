@@ -25,4 +25,4 @@ schema = "public"
 [app]
 map_database = "kuvasz-streamer.db"
 num_workers = 2
-commit_delay = 10.0
+commit_delay = 1.0
