@@ -46,6 +46,7 @@ gen &
 pid=$!
 sleep 5
 
+cp kuvasz-streamer-gold.db kuvasz-streamer.db
 ../kuvasz-streamer --conf=./conf/kuvasz-streamer-sqlite.toml > log/kuvasz-streamer.log 2>&1 &
 sleep 10
 kill $pid
