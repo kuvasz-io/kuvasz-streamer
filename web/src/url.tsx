@@ -27,9 +27,7 @@ export const UrlList = () => (
     <List>
         <Datagrid rowClick="edit">
             <TextField source="id" label="ID"/>
-            <ReferenceField source="db_id" reference="db"  label="Database">
-                <TextField source="name" />
-            </ReferenceField>
+            <TextField source="db_name" label = "Database"/>
             <TextField source="sid" label="SID"/>
             <TextField source="url" label="URL"/>
             <BooleanField source='up' label="Status" FalseIcon={WarningIcon}/>
@@ -42,9 +40,7 @@ export const UrlEdit = () => (
     <Edit>
         <SimpleForm>
             <TextField source="id" label="ID"/>
-            <ReferenceField source="db_id" reference="db"  label="Database">
-                <TextField source="name" />.
-            </ReferenceField>
+            <TextField source="db_name" label = "Database"/>
             <TextInput source="sid" label="SID"/>
             <TextInput source="url" label="URL" fullWidth />
         </SimpleForm>
@@ -55,9 +51,7 @@ export const UrlShow = () => (
     <Show>
         <SimpleShowLayout>
             <TextField source="id" label="ID"/>
-            <ReferenceField source="db_id" reference="db"  label="Database">
-                <TextField source="name" />.
-            </ReferenceField>
+            <TextField source="db_name" label = "Database"/>
             <TextField source="sid" label="SID"/>
             <TextField source="url" label="URL" />
         </SimpleShowLayout>

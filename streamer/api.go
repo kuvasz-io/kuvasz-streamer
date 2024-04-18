@@ -71,6 +71,7 @@ func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
 	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
+	w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
 	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
 	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
 	http.NotFound(w, r)
@@ -175,6 +176,7 @@ func CORSHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", origin)
 	w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
 	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
+	w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
 	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
 	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
 	w.WriteHeader(http.StatusOK)
@@ -195,6 +197,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", origin)
 			w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
 			w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
+			w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
 			w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
 			w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
 		}
@@ -251,6 +254,20 @@ func StatusMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func DeclarativeModeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if config.App.MapDatabase == "" &&
+			strings.HasPrefix(r.URL.Path, "/api") &&
+			r.Method != "GET" &&
+			r.Method != "OPTIONS" {
+			req := PrepareReq(w, r)
+			req.ReturnError(w, 405, "not_allowed", "cannot modify configuration in declarative mode", nil)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func APIServer(log *slog.Logger) {
 	// Set global logger
 	app.log = log.With("module", "api")
@@ -261,6 +278,7 @@ func APIServer(log *slog.Logger) {
 	// Add middlewares
 	router.Use(ObservabilityMiddleware)
 	router.Use(StatusMiddleware)
+	router.Use(DeclarativeModeMiddleware)
 	router.Use(CORSMiddleware)
 
 	// Add utility handlers
@@ -294,6 +312,10 @@ func APIServer(log *slog.Logger) {
 	router.HandleFunc("/api/tbl", tblPostOneHandler).Methods("POST")
 	router.HandleFunc("/api/tbl/{id}", tblDeleteOneHandler).Methods("DELETE")
 	router.HandleFunc("/api/tbl/{id}", tblPutOneHandler).Methods("PUT")
+
+	router.HandleFunc("/login", loginHandler).Methods("POST")
+	router.HandleFunc("/refresh-token", refreshTokenHandler).Methods("GET")
+	router.HandleFunc("/logout", logoutHandler).Methods("POST")
 
 	// Add web admin and route by default
 	router.Path("/").Handler(http.RedirectHandler("/admin/", http.StatusSeeOther))

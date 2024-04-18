@@ -37,6 +37,27 @@ func urlGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// declarative mode
+	if config.App.MapDatabase == "" {
+		for i := range dbmap {
+			for j := range dbmap[i].Urls {
+				if dbmap[i].Urls[j].ID == id {
+					item.ID = dbmap[i].Urls[j].ID
+					item.DBId = dbmap[i].ID
+					item.DBName = dbmap[i].Name
+					item.SID = dbmap[i].Urls[j].SID
+					item.URL = dbmap[i].Urls[j].URL
+					item.Up = getStatus(item.DBName, item.SID)
+					req.ReturnOK(w, r, item, 1)
+					return
+				}
+			}
+		}
+		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find url", err)
+		return
+	}
+
+	// database mode
 	err = ConfigDB.QueryRow(
 		`SELECT url.url_id, url.db_id, db.name as db_name, url.sid, url.url 
 		FROM url inner join db on url.db_id = db.db_id WHERE url_id = ?`,
@@ -58,8 +79,28 @@ func urlGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	var urls []URL
 
 	req := PrepareReq(w, r)
-
 	m := ValuesToModifier(r.URL.Query(), URLColumns)
+
+	// declarative mode
+	if config.App.MapDatabase == "" {
+		for i := range dbmap {
+			for j := range dbmap[i].Urls {
+				item := URL{
+					ID:     dbmap[i].Urls[j].ID,
+					DBId:   dbmap[i].ID,
+					DBName: dbmap[i].Name,
+					SID:    dbmap[i].Urls[j].SID,
+					URL:    dbmap[i].Urls[j].URL,
+					Up:     getStatus(dbmap[i].Name, dbmap[i].Urls[j].SID),
+				}
+				urls = append(urls, item)
+			}
+		}
+		req.ReturnOK(w, r, urls, len(urls))
+		return
+	}
+
+	// database mode
 	query := BuildQuery(
 		`SELECT url.url_id, url.db_id, db.name as db_name, url.sid, url.url 
 		FROM url inner join db on url.db_id=db.db_id`,

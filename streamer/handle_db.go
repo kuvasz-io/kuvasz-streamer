@@ -29,6 +29,18 @@ func dbGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if config.App.MapDatabase == "" {
+		for i := range dbmap {
+			if dbmap[i].ID == id {
+				item.ID = dbmap[i].ID
+				item.Name = dbmap[i].Name
+				req.ReturnOK(w, r, item, 1)
+				return
+			}
+		}
+		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find database", err)
+		return
+	}
 	err = ConfigDB.QueryRow(`SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.ID, &item.Name)
 	if errors.Is(err, sql.ErrNoRows) {
 		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find database", err)
@@ -46,6 +58,19 @@ func dbGetManyHandler(w http.ResponseWriter, r *http.Request) {
 
 	req := PrepareReq(w, r)
 
+	// declarative mode
+	if config.App.MapDatabase == "" {
+		for i := range dbmap {
+			item := db{
+				ID:   dbmap[i].ID,
+				Name: dbmap[i].Name,
+			}
+			dbs = append(dbs, item)
+		}
+		req.ReturnOK(w, r, dbs, len(dbs))
+		return
+	}
+	// database mode
 	m := ValuesToModifier(r.URL.Query(), dbColumns)
 	query := BuildQuery(`SELECT db_id, name FROM db`, m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())

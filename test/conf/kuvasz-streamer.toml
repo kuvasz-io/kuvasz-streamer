@@ -1,6 +1,6 @@
 [server]
 name = "kuvasz-streamer"
-address = ":8001"
+address = ":8000"
 max_goroutines = 100
 read_timeout = 30
 read_header_timeout = 30
@@ -26,3 +26,8 @@ schema = "public"
 map_file = "./conf/map.yaml"
 num_workers = 2
 commit_delay = 1.0
+
+[auth]
+admin_password = "$2b$05$KlJx0xWATjLt84bXrg6uZe/zU4TH3TvbPDLf6tOrzMUPEyN7AoEie"
+jwt_key = "Y3OYHx7Y1KsRJPzJKqHGWfEaHsPbmwwSpPrXcND95Pw="
+ttl = 300

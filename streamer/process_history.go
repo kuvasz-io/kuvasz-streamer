@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
@@ -111,7 +112,7 @@ func (op operation) deleteHistory(tableName string, relation PGRelation, values 
 			"query", query,
 			"queryParameters", queryParameters)
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
-		return fmt.Errorf("deleteHistory failed: no affected rows")
+		return errors.New("deleteHistory failed: no affected rows")
 	}
 	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Inc()
 	log.Debug("delete", "RowsAffected", rows.RowsAffected())

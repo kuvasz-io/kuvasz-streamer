@@ -39,6 +39,31 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// declarative mode
+	if config.App.MapDatabase == "" {
+		for i := range dbmap {
+			for j := range dbmap[i].Tables {
+				if dbmap[i].Tables[j].ID == id {
+					item.ID = dbmap[i].Tables[j].ID
+					item.DBId = dbmap[i].ID
+					item.DBName = dbmap[i].Name
+					schema, table := splitSchema(j)
+					item.Schema = schema
+					item.Name = table
+					item.Type = dbmap[i].Tables[j].Type
+					item.Target = dbmap[i].Tables[j].Target
+					regex := dbmap[i].Tables[j].PartitionsRegex
+					item.PartitionsRegex = &regex
+					req.ReturnOK(w, r, item, 1)
+					return
+				}
+			}
+		}
+		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find url", err)
+		return
+	}
+
+	// database mode
 	err = ConfigDB.QueryRow(
 		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.schema, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id
@@ -61,6 +86,30 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	m := ValuesToModifier(r.URL.Query(), tblColumns)
+	// declarative mode
+	if config.App.MapDatabase == "" {
+		for i := range dbmap {
+			for j := range dbmap[i].Tables {
+				schema, table := splitSchema(j)
+				regex := dbmap[i].Tables[j].PartitionsRegex
+				item := tbl{
+					ID:              dbmap[i].Tables[j].ID,
+					DBId:            dbmap[i].ID,
+					DBName:          dbmap[i].Name,
+					Schema:          schema,
+					Name:            table,
+					Type:            dbmap[i].Tables[j].Type,
+					Target:          dbmap[i].Tables[j].Target,
+					PartitionsRegex: &regex,
+				}
+				tbls = append(tbls, item)
+			}
+		}
+		req.ReturnOK(w, r, tbls, len(tbls))
+		return
+	}
+
+	// database mode
 	query := BuildQuery(
 		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.schema, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id`,

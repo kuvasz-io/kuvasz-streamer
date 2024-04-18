@@ -1,44 +1,57 @@
-import { AuthProvider, HttpError } from "react-admin";
-import data from "./users.json";
+import inMemoryJWT from './in_memory_jwt';
 
-/**
- * This authProvider is only for test purposes. Don't use it in production.
- */
-export const authProvider: AuthProvider = {
-  login: ({ username, password }) => {
-    const user = data.users.find(
-      (u) => u.username === username && u.password === password
-    );
+export const authProvider = {
+    login: ({username, password}: any) => {
+        const request = new Request('http://turing:8000/login', {
+            method: 'POST',
+            body: JSON.stringify({ 'username': username, 'password': password }),
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+            credentials: 'include',
+        });
+        inMemoryJWT.setRefreshTokenEndpoint('http://turing:8000/refresh-token');
+        return fetch(request)
+            .then((response) => {
+                if (response.status < 200 || response.status >= 300) {
+                    throw new Error(response.statusText);
+                }
+                return response.json();
+            })
+            .then(({ token, tokenExpiry }) => {
+                return inMemoryJWT.setToken(token, tokenExpiry);
+            });
+    },
 
-    if (user) {
-      // eslint-disable-next-line no-unused-vars
-      let { password, ...userToPersist } = user;
-      localStorage.setItem("user", JSON.stringify(userToPersist));
-      return Promise.resolve();
-    }
+    logout: () => {
+        const request = new Request('http://turing:8000/logout', {
+            method: 'POST',
+            headers: new Headers({ 'Content-Type': 'application/json' }),
+            credentials: 'include',
+        });
+        inMemoryJWT.eraseToken();
 
-    return Promise.reject(
-      new HttpError("Unauthorized", 401, {
-        message: "Invalid username or password",
-      })
-    );
-  },
-  logout: () => {
-    localStorage.removeItem("user");
-    return Promise.resolve();
-  },
-  checkError: () => Promise.resolve(),
-  checkAuth: () =>
-    localStorage.getItem("user") ? Promise.resolve() : Promise.reject(),
-  getPermissions: () => {
-    return Promise.resolve(undefined);
-  },
-  getIdentity: () => {
-    const persistedUser = localStorage.getItem("user");
-    const user = persistedUser ? JSON.parse(persistedUser) : null;
+        return fetch(request).then(() => '/login');
+    },
 
-    return Promise.resolve(user);
-  },
+    checkAuth: () => {
+        return inMemoryJWT.waitForTokenRefresh().then(() => {
+            return inMemoryJWT.getToken() ? Promise.resolve() : Promise.reject();
+        });
+    },
+
+    checkError: (error: any) => {
+        const status = error.status;
+        if (status === 401 || status === 403) {
+            inMemoryJWT.eraseToken();
+            return Promise.reject();
+        }
+        return Promise.resolve();
+    },
+
+    getPermissions: () => {
+        return inMemoryJWT.waitForTokenRefresh().then(() => {
+            return inMemoryJWT.getToken() ? Promise.resolve() : Promise.reject();
+        });
+    },
 };
 
-export default authProvider;
+export default authProvider; 

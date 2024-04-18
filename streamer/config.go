@@ -35,6 +35,11 @@ type (
 		Schema string `koanf:"schema"`
 	}
 
+	AuthConfig struct {
+		AdminPassword string `koanf:"admin_password"`
+		JWTKey        string `koanf:"jwt_key"`
+		TTL           int    `koanf:"ttl"`
+	}
 	AppConfig struct {
 		MapFile       string     `koanf:"map_file"`
 		MapDatabase   string     `koanf:"map_database"`
@@ -46,10 +51,11 @@ type (
 	}
 
 	CORSConfig struct {
-		AllowedOrigins []string `koanf:"allowed_origins"`
-		AllowMethods   string   `koanf:"allow_methods"`
-		AllowHeaders   string   `koanf:"allow_headers"`
-		MaxAge         int      `koanf:"max_age"`
+		AllowedOrigins   []string `koanf:"allowed_origins"`
+		AllowMethods     string   `koanf:"allow_methods"`
+		AllowHeaders     string   `koanf:"allow_headers"`
+		AllowCredentials bool     `koanf:"allow_credentials"`
+		MaxAge           int      `koanf:"max_age"`
 	}
 	Config struct {
 		Server      ServerConfig      `koanf:"server"`
@@ -57,6 +63,7 @@ type (
 		Logs        LogsConfig        `koanf:"logs"`
 		Database    DatabaseConfig    `koanf:"database"`
 		App         AppConfig         `koanf:"app"`
+		Auth        AuthConfig        `koanf:"auth"`
 		Cors        CORSConfig        `koanf:"cors"`
 	}
 )
@@ -90,11 +97,17 @@ var config = Config{
 		SyncRate:      1_000_000_000,
 		SyncBurst:     1_000,
 	},
+	Auth: AuthConfig{
+		AdminPassword: "$2b$05$KlJx0xWATjLt84bXrg6uZe/zU4TH3TvbPDLf6tOrzMUPEyN7AoEie",
+		JWTKey:        "Y3OYHx7Y1KsRJPzJKqHGWfEaHsPbmwwSpPrXcND95Pw=",
+		TTL:           300,
+	},
 	Cors: CORSConfig{
-		AllowedOrigins: []string{"*"},
-		AllowMethods:   "GET,POST,PATCH,PUT,DELETE",
-		AllowHeaders:   "Authorization,User-Agent,If-Modified-Since,Cache-Control,Content-Type,X-Total-Count",
-		MaxAge:         86400,
+		AllowedOrigins:   []string{"*"},
+		AllowMethods:     "GET,POST,PATCH,PUT,DELETE",
+		AllowHeaders:     "Authorization,User-Agent,If-Modified-Since,Cache-Control,Content-Type,X-Total-Count",
+		AllowCredentials: true,
+		MaxAge:           86400,
 	},
 }
 

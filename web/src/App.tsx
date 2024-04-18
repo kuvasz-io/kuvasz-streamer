@@ -25,7 +25,7 @@ export const App = () => (
     >
     <Resource
       name="db"
-      options={{ label: 'Database schemas' }}
+      options={{ label: 'Databases' }}
       list={DbList}
       edit={DbEdit}
       show={DbShow}

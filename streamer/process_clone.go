@@ -214,7 +214,7 @@ func (op operation) deleteClone(tx pgx.Tx) error {
 		log.Error("did not find row to delete, destination database was not in sync", "query", query, "parameters", queryParameters)
 		requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Inc()
 		requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "failure").Observe(time.Since(t0).Seconds())
-		return fmt.Errorf("deleteClone failed: no affected rows")
+		return errors.New("deleteClone failed: no affected rows")
 	}
 	requestsTotal.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Inc()
 	requestDuration.WithLabelValues(op.database, op.sid, op.sourceTable, "delete", "success").Observe(time.Since(t0).Seconds())
