@@ -3,40 +3,6 @@ import inMemoryJWT from './in_memory_jwt';
 import { fetchUtils, DataProvider } from 'ra-core';
 
 
-/**
- * Maps react-admin queries to a simple REST API
- *
- * This REST dialect is similar to the one of FakeRest
- *
- * @see https://github.com/marmelab/FakeRest
- *
- * @example
- *
- * getList     => GET http://my.api.url/posts?sort=['title','ASC']&range=[0, 24]
- * getOne      => GET http://my.api.url/posts/123
- * getMany     => GET http://my.api.url/posts?filter={id:[123,456,789]}
- * update      => PUT http://my.api.url/posts/123
- * create      => POST http://my.api.url/posts
- * delete      => DELETE http://my.api.url/posts/123
- *
- * @example
- *
- * import * as React from "react";
- * import { Admin, Resource } from 'react-admin';
- * import simpleRestProvider from 'ra-data-simple-rest';
- *
- * import { PostList } from './posts';
- *
- * const App = () => (
- *     <Admin dataProvider={simpleRestProvider('http://path.to.my.api/')}>
- *         <Resource name="posts" list={PostList} />
- *     </Admin>
- * );
- *
- * export default App;
- */
-
-
 const jwtClient = (url: string, options : any) => {
   const token = inMemoryJWT.getToken();
   if (!options.headers) {
@@ -46,7 +12,7 @@ const jwtClient = (url: string, options : any) => {
       options.headers.set('Authorization', `Bearer ${token}`);
       return fetchUtils.fetchJson(url, options);
   } else {
-      inMemoryJWT.setRefreshTokenEndpoint('http://localhost:8001/refresh-token');
+      inMemoryJWT.setRefreshTokenEndpoint('/refresh-token');
       return inMemoryJWT.getRefreshedToken().then((gotFreshToken) => {
           if (gotFreshToken) {
               options.headers.set('Authorization', `Bearer ${inMemoryJWT.getToken()}`);
@@ -56,7 +22,7 @@ const jwtClient = (url: string, options : any) => {
   }
 };
 
-const apiUrl:string = 'http://turing:8000/api'
+const apiUrl:string = '/api'
 const httpClient = jwtClient
 const countHeader: string = 'X-Total-Count'
 

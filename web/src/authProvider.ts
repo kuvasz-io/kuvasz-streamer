@@ -2,13 +2,13 @@ import inMemoryJWT from './in_memory_jwt';
 
 export const authProvider = {
     login: ({username, password}: any) => {
-        const request = new Request('http://turing:8000/login', {
+        const request = new Request('/login', {
             method: 'POST',
             body: JSON.stringify({ 'username': username, 'password': password }),
             headers: new Headers({ 'Content-Type': 'application/json' }),
             credentials: 'include',
         });
-        inMemoryJWT.setRefreshTokenEndpoint('http://turing:8000/refresh-token');
+        inMemoryJWT.setRefreshTokenEndpoint('/refresh-token');
         return fetch(request)
             .then((response) => {
                 if (response.status < 200 || response.status >= 300) {
