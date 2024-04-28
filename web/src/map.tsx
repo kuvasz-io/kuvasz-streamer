@@ -50,7 +50,7 @@ const RefreshButton = () => {
 
 export const MapList = () => (
     <List pagination={false} perPage={1000}>
-        <Datagrid >
+        <Datagrid bulkActionButtons={false}>
             <TextField source="id" sortable={false}/>
             <TextField source="db_id" label ="DB ID"sortable={false}/>
             <TextField source="db_name" label="Database" sortable={false}/>

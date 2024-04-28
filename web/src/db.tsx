@@ -9,13 +9,23 @@ import {
     TextInput,
     ReferenceInput, 
     SimpleForm, 
-    SimpleShowLayout
+    SimpleShowLayout,
+    BulkDeleteButton
 } from 'react-admin';
 
 
 export const DbList = () => (
     <List>
         <Datagrid rowClick="edit">
+            <TextField source="id" label="ID" />
+            <TextField source="name" label="Database"/>
+        </Datagrid>
+    </List>
+);
+
+export const DbView = () => (
+    <List>
+        <Datagrid bulkActionButtons={false}>
             <TextField source="id" label="ID" />
             <TextField source="name" label="Database"/>
         </Datagrid>

@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-func MapGetOneHandler(w http.ResponseWriter, r *http.Request) {
+func mapGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	// extract id
@@ -38,7 +38,7 @@ func MapGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	req.ReturnOK(w, r, result, 1)
 }
 
-func MapGetManyHandler(w http.ResponseWriter, r *http.Request) {
+func mapGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 	if len(MappingTable) == 0 {
 		err := RefreshMappingTable()
@@ -50,7 +50,7 @@ func MapGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	req.ReturnOK(w, r, MappingTable, len(MappingTable))
 }
 
-func MapCreateTableHandler(w http.ResponseWriter, r *http.Request) {
+func mapCreateTableHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	// extract id
@@ -87,7 +87,7 @@ func MapCreateTableHandler(w http.ResponseWriter, r *http.Request) {
 	req.ReturnOK(w, r, t, 1)
 }
 
-func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
+func mapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 
 	// extract id
@@ -163,7 +163,7 @@ func MapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 	req.ReturnOK(w, r, t, 1)
 }
 
-func MapRefreshHandler(w http.ResponseWriter, r *http.Request) {
+func mapRefreshHandler(w http.ResponseWriter, r *http.Request) {
 	req := PrepareReq(w, r)
 	err := RefreshMappingTable()
 	if err != nil {

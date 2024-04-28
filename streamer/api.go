@@ -258,10 +258,45 @@ func DeclarativeModeMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if config.App.MapDatabase == "" &&
 			strings.HasPrefix(r.URL.Path, "/api") &&
-			r.Method != "GET" &&
-			r.Method != "OPTIONS" {
+			r.Method != http.MethodGet &&
+			r.Method != http.MethodOptions {
 			req := PrepareReq(w, r)
 			req.ReturnError(w, 405, "not_allowed", "cannot modify configuration in declarative mode", nil)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func TokenValidationMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// skip validation for non API requests
+		if !strings.HasPrefix(r.URL.Path, "/api") && !strings.HasPrefix(r.URL.Path, "/refresh-token") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// skip validation for OPTIONS requests
+		if r.Method == http.MethodOptions {
+			next.ServeHTTP(w, r)
+			return
+		}
+		// Validate token
+		if _, ok := r.Header["Authorization"]; !ok {
+			req := PrepareReq(w, r)
+			req.ReturnError(w, http.StatusUnauthorized, "not_allowed", "no authorization header", nil)
+			return
+		}
+		token := strings.TrimPrefix(r.Header["Authorization"][0], "Bearer ")
+		role, err := validateToken(token)
+		if err != nil {
+			req := PrepareReq(w, r)
+			req.ReturnError(w, http.StatusUnauthorized, "not_allowed", "invalid authorization token", nil)
+			return
+		}
+		// Now check the allowed endpoints
+		if role == "viewer" && r.Method != http.MethodGet {
+			req := PrepareReq(w, r)
+			req.ReturnError(w, http.StatusForbidden, "not_allowed", "viewer cannot modify configuration", nil)
 			return
 		}
 		next.ServeHTTP(w, r)
@@ -288,11 +323,11 @@ func APIServer(log *slog.Logger) {
 	router.Methods("OPTIONS").HandlerFunc(CORSHandler)
 
 	// Add app handlers
-	router.HandleFunc("/api/map", MapGetManyHandler).Methods("GET")
-	router.HandleFunc("/api/map/{id}", MapGetOneHandler).Methods("GET")
-	router.HandleFunc("/api/map/{id}/create", MapCreateTableHandler).Methods("POST")
-	router.HandleFunc("/api/map/{id}/clone", MapCloneTableHandler).Methods("POST")
-	router.HandleFunc("/api/map/refresh", MapRefreshHandler).Methods("POST")
+	router.HandleFunc("/api/map", mapGetManyHandler).Methods("GET")
+	router.HandleFunc("/api/map/{id}", mapGetOneHandler).Methods("GET")
+	router.HandleFunc("/api/map/{id}/create", mapCreateTableHandler).Methods("POST")
+	router.HandleFunc("/api/map/{id}/clone", mapCloneTableHandler).Methods("POST")
+	router.HandleFunc("/api/map/refresh", mapRefreshHandler).Methods("POST")
 
 	router.HandleFunc("/api/db/{id}", dbGetOneHandler).Methods("GET")
 	router.HandleFunc("/api/db", dbGetManyHandler).Methods("GET")
