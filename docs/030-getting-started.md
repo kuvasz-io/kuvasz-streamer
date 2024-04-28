@@ -49,7 +49,6 @@ In a third window, prepare the schemas in source and destination databases.
 ```bash
 psql postgres://postgres:postgres@127.0.0.1:6015/postgres -c "create database source"
 psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create table employee(id serial, name text, dob date, salary numeric)"
-psql postgres://postgres:postgres@127.0.0.1:6015/source -c "create publication kuvasz_source for all tables"
 psql postgres://postgres:postgres@127.0.0.1:6016/postgres -c "create database dest"
 psql postgres://postgres:postgres@127.0.0.1:6016/dest -c "create table emp(sid text, id int, name text, dob date)"
 ```

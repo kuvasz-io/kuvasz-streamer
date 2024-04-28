@@ -22,7 +22,11 @@ nav_order: 60
   host    replication    all            0.0.0.0/0               scram-sha-256
   ```
 
-- Create a replicaiton user exclusively for `kuvasz-streamer`
+- Create a replication user exclusively for `kuvasz-streamer`
+
+    ```
+    CREATE ROLE kuvasz-streamer WITH REPLICATION LOGIN PASSWORD 'streamer';
+    ```
 
 ## Destination Schema
 

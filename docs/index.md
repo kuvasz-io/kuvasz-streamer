@@ -7,7 +7,7 @@ Kuvasz-streamer is an open source change data capture (CDC) project that focuses
 
 ### Lightweight
 
-Kuvasz-streamer is a lightweight service written in Go that has no dependencies and no queuing. Run it as a system service or in a Docker container.
+Kuvasz-streamer is a lightweight service written in Go that has no dependencies and no queuing. Run it as a system service or in a Docker container. It can run in a full declarative mode where the configuration map is stored in a read-only YAML file and no files are written to disk. This mode is suitable for a CI/CD pipeline based configuration and a Kubernetes deployment. An interactive, database-backed mode is supported where the web interface can be used to modify the mapping configuration at runtime.
 
 ### High-performance
 
@@ -17,7 +17,7 @@ And in order not to overload a production database server, it also supports glob
 
 ### Batteries included
 
-Kuvasz-streamer manages publications on source databases adding and deleting configured tables from the publication automatically. It also performs a full sync whenever a new table is added.
+Kuvasz-streamer manages publications and replication slots on source databases, adding and deleting configured tables from the publication automatically. It also performs a full sync whenever a new table is added.
 
 ### Flexible
 

@@ -58,6 +58,15 @@ func (r *requestRecord) WriteHeader(status int) {
 	r.ResponseWriter.WriteHeader(status)
 }
 
+func AddCORSHeaders(w http.ResponseWriter, origin string) {
+	w.Header().Set("Access-Control-Allow-Origin", origin)
+	w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
+	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
+	w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
+	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
+	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
+}
+
 func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	log := app.log
 	log.Info("ReqNotFound",
@@ -68,12 +77,7 @@ func (app App) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 		"headers", r.Header,
 	)
 	origin := r.Header.Get("Origin")
-	w.Header().Set("Access-Control-Allow-Origin", origin)
-	w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
-	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
-	w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
-	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
-	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
+	AddCORSHeaders(w, origin)
 	http.NotFound(w, r)
 }
 
@@ -173,12 +177,7 @@ func CORSHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", origin)
-	w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
-	w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
-	w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
-	w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
-	w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
+	AddCORSHeaders(w, origin)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -193,13 +192,7 @@ func CORSMiddleware(next http.Handler) http.Handler {
 				http.Error(w, "Origin not allowed", http.StatusForbidden)
 				return
 			}
-
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Methods", config.Cors.AllowMethods)
-			w.Header().Set("Access-Control-Allow-Headers", config.Cors.AllowHeaders)
-			w.Header().Set("Access-Control-Allow-Credentials", strconv.FormatBool(config.Cors.AllowCredentials))
-			w.Header().Set("Access-Control-Expose-Headers", config.Cors.AllowHeaders)
-			w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.Cors.MaxAge))
+			AddCORSHeaders(w, origin)
 		}
 		next.ServeHTTP(w, r)
 	})

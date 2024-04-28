@@ -146,7 +146,7 @@ Then use `pip` to install Robot Framework and its dependencies
 pip3 install psycopg2-binary robotframework robotframework-databaselibrary
 ```
 
-### Run the test suit
+### Run the test suite
 
 ```bash
 make test

@@ -12,7 +12,7 @@ If a column is added in a source database, it is ignored until it is added in th
 
 ## Deleting columns
 
-Columns should not be deleted from source tables. If they are deleted for any reason, they will be ognored in the destination table and the default value will be used. If the destination column does not allow NULLs and no default value is defined, the insert/update will fail.
+Columns should not be deleted from source tables. If they are deleted for any reason, they will be ignored in the destination table and the default value will be used. If the destination column does not allow NULLs and no default value is defined, the insert/update will fail.
 
 ## Changing column types
 

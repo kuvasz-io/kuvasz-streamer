@@ -37,7 +37,11 @@ nav_order: 50
 |`cors`|`allowed_origins`|Array of strings|Origin sites to allow, Use * for testing|
 |`cors`|`allow_methods`|String|`GET,POST,PATCH,PUT,DELETE`|Comma separated list of allowed methods, should not be changed|
 |`cors`|`allow_headers`|String|`Authorization,User-Agent,If-Modified-Since,Cache-Control,Content-Type,X-Total-Count`|Comma separated list of allowed headers, should not be changed|
+|`cors`|`allow_credentials`|Boolean|true|Switch to allow Authorization header|
 |`cors`|`max_age`|Integer|86400|Maximum time to use the CORS response in seconds|
+|`auth`|`admin_password`|String|`hash(admin)`|Web administrator password. Compatible with `mkpasswd` output. |
+|`auth`|`jwt_key`|String|`Y3OYHx7Y1KsRJPzJKqHGWfEaHsPbmwwSpPrXcND95Pw=`|JWT signing key. Generate a cryptographycally secure key with `openssl rand -base64 32`|
+|`auth`|`ttl`|Integer|300|Token validity period in seconds|
 |`app`|`map_file`|String|`map.yaml`|Table mapping file|
 |`app`|`map_database`|String||Table mapping file|
 |`app`|`num_workers`|Integer|2|Number of workers writing to the destination database|
