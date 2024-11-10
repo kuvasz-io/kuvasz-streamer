@@ -10,6 +10,8 @@
     sid: 15
   - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db1
     sid: 16
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6017/db1
+    sid: 17
   tables:
     t0:
     t1:
@@ -36,5 +38,7 @@
     sid: 15
   - url: postgres://kuvasz:kuvasz@127.0.0.1:6016/db2
     sid: 16
+  - url: postgres://kuvasz:kuvasz@127.0.0.1:6017/db2
+    sid: 17
   tables:
     s1:

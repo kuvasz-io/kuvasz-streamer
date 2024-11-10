@@ -32,7 +32,7 @@ GET all urls should succeed
     Expect Response Body    ${schema}/urls.json
     GET                     /api/url
     Integer                 response status                 200
-    Array                   response body                   minItems=10  maxItems=10
+    Array                   response body                   minItems=12  maxItems=12
 
 Create url should succeed
     Clear Expectations
@@ -60,7 +60,7 @@ Modify url should succeed
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/url.json
-    PUT                     /api/url/11                      {"db_id": 3, "sid": "13", "url":"postgres://user:password@127.0.0.1/db3" }
+    PUT                     /api/url/13                     {"db_id": 3, "sid": "13", "url":"postgres://user:password@127.0.0.1/db3" }
     Integer                 response status                 200
     String                  response body sid               13
     
@@ -68,14 +68,14 @@ Modify url with missing parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/url/11                     {"product_name": "vm-xl-2"}
+    PUT                     /api/url/13                     {"product_name": "vm-xl-2"}
     Integer                 response status                 400
 
 Modify url with invalid parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/url/11                     {"sid": 123}
+    PUT                     /api/url/13                     {"sid": 123}
     Integer                 response status                 400
 
 Modify non existing url should fail
@@ -95,7 +95,7 @@ Modify url with invalid id should fail
 Delete existing url should succeed
     Clear Expectations
     Set Headers             ${admin}
-    DELETE                  /api/url/11
+    DELETE                  /api/url/13
     Integer                 response status                 200
 
 Delete non-existing url should fail

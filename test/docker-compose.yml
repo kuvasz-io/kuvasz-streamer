@@ -1,4 +1,12 @@
 services:
+  pg17:
+    image: postgres:17
+    command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 6017:5432
   pg16:
     image: postgres:16
     command: -c wal_level=logical -c log_connections=on -c log_min_duration_statement=0 -c log_line_prefix='%m [%a] %q%u@%d '

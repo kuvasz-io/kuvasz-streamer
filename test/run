@@ -7,7 +7,7 @@ PSQL="psql -v ON_ERROR_STOP=1"
 function gen() {
     while true
     do
-        for PORT in 6012 6013 6014 6015 6016; do
+        for PORT in 6012 6013 6014 6015 6016 6017; do
             ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
         done
         sleep 1
@@ -19,7 +19,7 @@ killall kuvasz-streamer || true
 
 # Pull latest minor version
 export REGISTRY=docker.io
-for VER in 12 13 14 15 16; do
+for VER in 12 13 14 15 16 17; do
     docker pull ${REGISTRY}/postgres:${VER}
 done
 
@@ -28,14 +28,14 @@ docker compose down
 docker compose up -d
 
 # Wait until all instances are ready
-for PORT in 6012 6013 6014 6015 6016; do
+for PORT in 6012 6013 6014 6015 6016 6017; do
     until pg_isready -h 127.0.0.1 -p ${PORT} -d postgres -U postgres;
         do sleep 1;
     done;
 done
 
 # Create user and databases
-for PORT in 6012 6013 6014 6015 6016; do
+for PORT in 6012 6013 6014 6015 6016 6017; do
     ${PSQL} postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "create user kuvasz password 'kuvasz' createdb replication;"
     ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/postgres -f database/source.sql
 done
@@ -48,7 +48,7 @@ sleep 5
 
 cp kuvasz-streamer-gold.db kuvasz-streamer.db
 ../kuvasz-streamer --conf=./conf/kuvasz-streamer-sqlite.toml > log/kuvasz-streamer.log 2>&1 &
-sleep 10
+sleep 20
 kill $pid
 
 robot --exitonfailure -d log testsuite

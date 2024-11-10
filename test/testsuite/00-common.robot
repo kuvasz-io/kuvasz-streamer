@@ -7,7 +7,7 @@ Library           REST               http://127.0.0.1:8000
 
 *** Variables ***
 ${SLEEP}          1.8
-@{PGVERSIONS}=    12    13    14    15    16
+@{PGVERSIONS}=    12    13    14    15    16    17
 ${SCHEMA}        ./schema
 ${ADMIN}         {"content-type": "application/json"}
 
