@@ -27,7 +27,7 @@ build:
 
 vulncheck:
 	govulncheck -mode=binary kuvasz-streamer
-	
+
 release:
 	goreleaser release --clean --snapshot
 
@@ -50,5 +50,5 @@ docs:
 clean:
 	rm -rf ${BINARY} streamer/admin web/dist dist
 
-.PHONY: check web build release rpmrepo aptrepo test docs clean
+.PHONY: web check build vulncheck release rpmrepo aptrepo test docs clean
 
