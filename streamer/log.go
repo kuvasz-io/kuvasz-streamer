@@ -37,11 +37,11 @@ func GetLogger(l *slog.Logger) *Logger {
 }
 
 func (l *Logger) Fatalf(format string, v ...any) {
-	l.slogLogger.Debug(fmt.Sprintf(format, v...))
+	l.slogLogger.Debug("fatal", "error", fmt.Sprintf(format, v...))
 	os.Exit(1)
 }
 func (l *Logger) Printf(format string, v ...any) {
-	l.slogLogger.Debug(fmt.Sprintf(format, v...))
+	l.slogLogger.Debug("", "msg", fmt.Sprintf(format, v...))
 }
 
 func parseLevel(level string) (slog.Level, error) {

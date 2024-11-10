@@ -195,23 +195,23 @@ func ReadMap() {
 		Migrate(embedMigrations, "migrations", ConfigDB)
 		dbmap, err = ReadMapDatabase(ConfigDB)
 		if err != nil {
-			log.Error("Can't read config database, error=%w", err)
+			log.Error("Can't read config database", "error", err)
 			os.Exit(1)
 		}
 		err = RefreshMappingTable()
 		if err != nil {
-			log.Error("Can't refresh mapping table, error=%w", err)
+			log.Error("Can't refresh mapping table", "error", err)
 			os.Exit(1)
 		}
 	} else {
 		dbmap, err = ReadMapFile(config.App.MapFile)
 		if err != nil {
-			log.Error("Can't read map file, error=%w", err)
+			log.Error("Can't read map file", "error", err)
 			os.Exit(1)
 		}
 		err = RefreshMappingTable()
 		if err != nil {
-			log.Error("Can't refresh mapping table, error=%w", err)
+			log.Error("Can't refresh mapping table", "error", err)
 			os.Exit(1)
 		}
 	}

@@ -361,6 +361,6 @@ func APIServer(log *slog.Logger) {
 		MaxHeaderBytes:    config.Server.MaxHeaderBytes,
 		ErrorLog:          slog.NewLogLogger(log.Handler(), slog.LevelError),
 	}
-	log.Error("%v", srv.ListenAndServe())
+	log.Error("%v", slog.Any("Cannot ListenAndServe", srv.ListenAndServe()))
 	os.Exit(1)
 }

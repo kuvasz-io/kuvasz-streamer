@@ -101,7 +101,7 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Error("cannot read body: %v", err)
+		log.Error("cannot read body", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "0000", "Cannot read request", err)
 		return
 	}
@@ -166,7 +166,7 @@ func dbPutOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Error("cannot read body: %v", err)
+		log.Error("cannot read body", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "0000", "Cannot read request", err)
 		return
 	}

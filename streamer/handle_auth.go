@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -54,7 +55,7 @@ func validateToken(tokenString string) (string, error) {
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		return claims["role"].(string), nil
 	}
-	return "", fmt.Errorf("cannot get claims map")
+	return "", errors.New("cannot get claims map")
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
@@ -63,7 +64,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Error("cannot read body: %v", err)
+		log.Error("cannot read body", "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "0000", "Cannot read request", err)
 		return
 	}

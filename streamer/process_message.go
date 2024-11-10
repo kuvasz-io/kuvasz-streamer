@@ -161,7 +161,7 @@ func processMessage(
 		}
 		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("cannot get table", "namespace", rel.Namespace, "relationName", rel.RelationName, "error", err)
 			return
 		}
 		op.sourceTable = rel.RelationName
@@ -197,7 +197,7 @@ func processMessage(
 		}
 		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("cannot get table", "namespace", rel.Namespace, "relationName", rel.RelationName, "error", err)
 			return
 		}
 		op.old = m.OldTupleType
@@ -265,6 +265,6 @@ func processMessage(
 		// ...
 
 	default:
-		log.Warn(fmt.Sprintf("Unknown message type in pgoutput stream: %T", logicalMsg))
+		log.Warn("Unknown message type in pgoutput stream", "type", logicalMsg.Type().String())
 	}
 }

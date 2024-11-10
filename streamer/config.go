@@ -123,7 +123,7 @@ func reloadConfig(configFiles []string, f *flag.FlagSet, envPrefix string) {
 			log.Warn("skipping file", "name", c, "error", err)
 		}
 	}
-	log.Warn(k.Sprint())
+	log.Warn("config file", "map", k.Sprint())
 	// Step 2 - Override with environment variables
 	log.Debug("Merging environment variables", "prefix", envPrefix)
 	err := k.Load(env.Provider(envPrefix+"_", ".", func(s string) string {
@@ -133,7 +133,7 @@ func reloadConfig(configFiles []string, f *flag.FlagSet, envPrefix string) {
 	if err != nil {
 		log.Error("can't load environment", "error", err)
 	}
-	log.Warn(k.Sprint())
+	log.Warn("after env variables", "map", k.Sprint())
 
 	// Step 3 - Override with command line
 	log.Warn("Merging command line flags")
@@ -141,7 +141,7 @@ func reloadConfig(configFiles []string, f *flag.FlagSet, envPrefix string) {
 		log.Error("error loading config", "error", err)
 		os.Exit(1)
 	}
-	log.Warn(k.Sprint())
+	log.Warn("after command line", "map", k.Sprint())
 
 	// Step 4 - Unmarshal into struct
 	err = k.Unmarshal("", &config)
@@ -181,7 +181,7 @@ func Configure(configFiles []string, envPrefix string) {
 	for _, c := range configFileNames {
 		log.Debug("Watching file", "name", c)
 		f := file.Provider(c)
-		err = f.Watch(func(event interface{}, err error) {
+		err = f.Watch(func(_ interface{}, _ error) {
 			reloadConfig(configFileNames, flags, envPrefix)
 		})
 		if err != nil {

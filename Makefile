@@ -11,7 +11,10 @@ CONTAINER-LATEST   := ${REGISTRY}/${BINARY}:${CI_COMMIT_REF_NAME}
 LDFLAGS            += -X ${BINARY}.Version=${VERSION}
 LDFLAGS            += -X ${BINARY}.Build=${BUILD}
 
-all: web check build
+all: web check build vulncheck
+
+web:
+	cd web; yarn install; yarn build --outDir ../streamer/admin
 
 check:
 	staticcheck -checks=all ./...
@@ -19,12 +22,12 @@ check:
 	golangci-lint run
 	govulncheck ./...
 
-web:
-	cd web; yarn install; yarn build --outDir ../streamer/admin
-
 build:
 	go build -o ${BINARY} -ldflags="${LDFLAGS}" ./streamer/*.go
 
+vulncheck:
+	govulncheck -mode=binary kuvasz-streamer
+	
 release:
 	goreleaser release --clean --snapshot
 

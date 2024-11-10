@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -95,7 +96,7 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 
 	pgTables := make(PGTables)
 	if database == nil {
-		return pgTables, fmt.Errorf("no connection to database")
+		return pgTables, errors.New("no connection to database")
 	}
 	log = log.With("schema", schemaName)
 	log.Debug("Fetching tables and columns")
