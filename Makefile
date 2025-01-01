@@ -43,7 +43,7 @@ test:
 	cd test; ./run
 
 docs:
-	cd docs; jekyll build
+	cd docs; bundle exec jekyll build
 	rm -rf /var/www/caddy/streamer/*
 	cp -r docs/_site/* /var/www/caddy/streamer
 
