@@ -53,7 +53,10 @@ func validateToken(tokenString string) (string, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		return claims["role"].(string), nil
+		s, assertOK := claims["role"].(string)
+		if assertOK {
+			return s, nil
+		}
 	}
 	return "", errors.New("cannot get claims map")
 }
