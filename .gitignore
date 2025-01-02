@@ -2,6 +2,7 @@ kuvasz-streamer
 .vscode
 .DS_Store
 streamer/admin/
+test/kuvasz-streamer.db
 test/log/*.xml
 test/log/*.log
 test/log/*.html

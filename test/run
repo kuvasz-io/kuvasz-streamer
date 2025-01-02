@@ -5,12 +5,17 @@ set -e
 PSQL="psql -v ON_ERROR_STOP=1"
 
 function gen() {
-    while true
-    do
-        for PORT in 6012 6013 6014 6015 6016 6017; do
-            ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
-        done
-        sleep 1
+    for PORT in 6012 6013 6014 6015 6016 6017; do
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
+        ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
     done
 }
 
@@ -42,14 +47,11 @@ done
 ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
 
 # Start generating data
-gen &
-pid=$!
-sleep 5
+gen
 
 cp kuvasz-streamer-gold.db kuvasz-streamer.db
 ../kuvasz-streamer --conf=./conf/kuvasz-streamer-sqlite.toml > log/kuvasz-streamer.log 2>&1 &
-sleep 20
-kill $pid
+sleep 5
 
 robot --exitonfailure -d log testsuite
 cp log/log.html log/report.html ../docs/

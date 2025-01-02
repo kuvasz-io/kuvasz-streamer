@@ -14,7 +14,7 @@ ${ADMIN}         {"content-type": "application/json"}
 *** Keywords ***
 Connect To All Databases
     FOR    ${PG}    IN    @{PGVERSIONS}
-        Connect To Database   psycopg2    db1    kuvasz    kuvasz    127.0.0.1    60${PG}    alias=${PG}
+        Connect To Database Using Custom Connection String   psycopg2    postgres://kuvasz:kuvasz@127.0.0.1:60${PG}/db1?application_name=robot    alias=${PG}
         Execute SQL string    truncate t1 restart identity
         Execute SQL string    truncate t2 restart identity
         Execute SQL string    truncate t3 restart identity
@@ -26,7 +26,7 @@ Connect To All Databases
         Execute SQL string    truncate private.t8 restart identity
         Set Auto Commit
     END
-    Connect To Database       psycopg2    dest   kuvasz    kuvasz    127.0.0.1    6012    alias=dest
+    Connect To Database Using Custom Connection String       psycopg2    postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=robot    alias=dest
     Execute SQL string        truncate t1 restart identity
     Execute SQL string        truncate rt2 restart identity
     Execute SQL string        truncate t3 restart identity

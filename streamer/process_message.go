@@ -28,7 +28,7 @@ type (
 
 func decodeTextColumnData(mi *pgtype.Map, data []byte, dataType uint32) (any, error) {
 	if dt, ok := mi.TypeForOID(dataType); ok {
-		log.Debug("found", "data", data, "dt", dt)
+		log.Debug("found", "data", string(data), "dt", dt)
 		decodedColumn, err := dt.Codec.DecodeValue(mi, dataType, pgtype.TextFormatCode, data)
 		if err != nil {
 			return decodedColumn, fmt.Errorf("cannot decode text column data %v, error: %w", data, err)
