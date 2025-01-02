@@ -12,6 +12,8 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Build and publish docs
+      run: make docs
     - name: Web
       run: make web
     - name: Vet
@@ -20,7 +22,5 @@ jobs:
       run: make build
     - name: Run tests
       run: make test
-    - name: Build and publish docs
-      run: make docs
     
 
