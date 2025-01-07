@@ -42,3 +42,41 @@ Update private table key attribute
     ...    update private.t8 set id=10 where id=1
     ...    select id, name from private.t8 order by id
     ...    select id, name from pt8 where sid='{}'
+
+# no sid
+
+Insert in public table - no sid
+    Single Database Statement should propagate
+    ...    insert into d8(name) values('p1')
+    ...    Select id, name from d8 order by id
+    ...    Select id, name from d8 order by id
+
+Insert in private table - no sid
+    Single Database Statement should propagate
+    ...    insert into private.d8(name) values('x1')
+    ...    Select id, name from private.d8 order by id
+    ...    Select id, name from pd8 order by id
+
+Update public table non key attribute - no sid
+    Single Database Statement should propagate
+    ...    update d8 set name='x1' where id=1
+    ...    select id, name from d8 order by id
+    ...    select id, name from d8 order by id
+
+Update private table non key attribute - no sid
+    Single Database Statement should propagate
+    ...    update private.d8 set name='z1' where id=1
+    ...    select id, name from private.d8 order by id
+    ...    select id, name from pd8 order by id
+
+Update public table key attribute - no sid
+    Single Database Statement should propagate        
+    ...    update d8 set id=5 where id=1
+    ...    select id, name from d8 order by id
+    ...    select id, name from d8 order by id
+
+Update private table key attribute - no sid
+    Single Database Statement should propagate        
+    ...    update private.d8 set id=10 where id=1
+    ...    select id, name from private.d8 order by id
+    ...    select id, name from pd8 order by id

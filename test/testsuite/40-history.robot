@@ -5,6 +5,7 @@ Suite Teardown     Disconnect From All Databases
 
 *** Variables ***
 ${DESTQUERY}       Select id, name, salary, kvsz_start, kvsz_end, kvsz_deleted from t4 where sid='{}' and id=1 order by id, kvsz_start
+${DESTQUERYNOSID}  Select id, name, salary, kvsz_start, kvsz_end, kvsz_deleted from d4 where id=1 order by id, kvsz_start
 
 *** Test cases ***
 Insert in history table row 1
@@ -95,3 +96,85 @@ Delete history table row 1
         Should Not Be Equal As Strings  ${dest}[2][4]  9999-01-01 00:00:00+00:00
         Should Be Equal As Strings      ${dest}[2][5]  True
     END
+
+# Now without sid
+
+Insert in history table row 1 - no sid
+    Single Database Statement should propagate
+    ...    insert into d4(name) values('r1')
+    ...    Select id, name, salary, '1900-01-01'::timestamptz, '9999-01-01'::timestamptz, false from d4 order by id
+    ...    Select id, name, salary, kvsz_start, kvsz_end, kvsz_deleted from d4 order by id
+
+Insert in history table row 2 - no sid
+    Single Database Statement should propagate         
+    ...    insert into d4(name) values('r2')
+    ...    Select id, name, salary, '1900-01-01'::timestamptz, '9999-01-01'::timestamptz, false from d4 order by id
+    ...    Select id, name, salary, kvsz_start, kvsz_end, kvsz_deleted from d4 order by id
+
+Update history table row 1 - take 1 - no sid
+    Switch Database         ${SOURCE}
+    Execute SQL string      update d4 set name='x1' where id=1
+    Sleep                   ${SLEEP}
+    Switch Database         dest
+    ${dest}=                Query            ${DESTQUERYNOSID}
+    Should Be Equal As Strings  ${dest}[0][0]  1
+    Should Be Equal As Strings  ${dest}[0][1]  r1
+    Should Be Equal As Strings  ${dest}[0][2]  None
+    Should Be Equal As Strings  ${dest}[0][3]  1900-01-01 00:00:00+00:00
+    Should Be Equal As Strings  ${dest}[0][5]  False
+    Should Be Equal As Strings  ${dest}[1][0]  1
+    Should Be Equal As Strings  ${dest}[1][1]  x1
+    Should Be Equal As Strings  ${dest}[1][2]  None
+    Should Be Equal As Strings  ${dest}[1][3]  ${dest}[0][4]
+    Should Be Equal As Strings  ${dest}[1][4]  9999-01-01 00:00:00+00:00
+    Should Be Equal As Strings  ${dest}[1][5]  False
+
+Update history table row 1 - take 2 - no sid
+    Switch Database         ${SOURCE}
+    Execute SQL string      update d4 set name='z1' where id=1
+    Sleep                   ${SLEEP}
+    Switch Database         dest
+    ${dest}=                Query            ${DESTQUERYNOSID}
+    Should Be Equal As Strings  ${dest}[0][0]  1
+    Should Be Equal As Strings  ${dest}[0][1]  r1
+    Should Be Equal As Strings  ${dest}[0][2]  None
+    Should Be Equal As Strings  ${dest}[0][3]  1900-01-01 00:00:00+00:00
+    Should Be Equal As Strings  ${dest}[0][4]  ${dest}[1][3]
+    Should Be Equal As Strings  ${dest}[0][5]  False
+    Should Be Equal As Strings  ${dest}[1][0]  1
+    Should Be Equal As Strings  ${dest}[1][1]  x1
+    Should Be Equal As Strings  ${dest}[1][2]  None
+    Should Be Equal As Strings  ${dest}[1][3]  ${dest}[0][4]
+    Should Be Equal As Strings  ${dest}[1][4]  ${dest}[2][3]
+    Should Be Equal As Strings  ${dest}[1][5]  False
+    Should Be Equal As Strings  ${dest}[2][0]  1
+    Should Be Equal As Strings  ${dest}[2][1]  z1
+    Should Be Equal As Strings  ${dest}[2][2]  None
+    Should Be Equal As Strings  ${dest}[2][3]  ${dest}[1][4]
+    Should Be Equal As Strings  ${dest}[2][4]  9999-01-01 00:00:00+00:00
+    Should Be Equal As Strings  ${dest}[2][5]  False
+
+Delete history table row 1 - no sid
+    Switch Database                 ${SOURCE}
+    Execute SQL string              delete from d4 where id=1
+    Sleep                           ${SLEEP}
+    Switch Database                 dest
+    ${dest}=                        Query          ${DESTQUERYNOSID}
+    Should Be Equal As Strings      ${dest}[0][0]  1
+    Should Be Equal As Strings      ${dest}[0][1]  r1
+    Should Be Equal As Strings      ${dest}[0][2]  None
+    Should Be Equal As Strings      ${dest}[0][3]  1900-01-01 00:00:00+00:00
+    Should Be Equal As Strings      ${dest}[0][4]  ${dest}[1][3]
+    Should Be Equal As Strings      ${dest}[0][5]  False
+    Should Be Equal As Strings      ${dest}[1][0]  1
+    Should Be Equal As Strings      ${dest}[1][1]  x1
+    Should Be Equal As Strings      ${dest}[1][2]  None
+    Should Be Equal As Strings      ${dest}[1][3]  ${dest}[0][4]
+    Should Be Equal As Strings      ${dest}[1][4]  ${dest}[2][3]
+    Should Be Equal As Strings      ${dest}[1][5]  False
+    Should Be Equal As Strings      ${dest}[2][0]  1
+    Should Be Equal As Strings      ${dest}[2][1]  z1
+    Should Be Equal As Strings      ${dest}[2][2]  None
+    Should Be Equal As Strings      ${dest}[2][3]  ${dest}[1][4]
+    Should Not Be Equal As Strings  ${dest}[2][4]  9999-01-01 00:00:00+00:00
+    Should Be Equal As Strings      ${dest}[2][5]  True

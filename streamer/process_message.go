@@ -11,18 +11,19 @@ import (
 
 type (
 	operation struct {
-		log         *slog.Logger
-		database    string
-		sid         string
-		opCode      string
-		sourceTable string
-		destTable   string
-		id          int64
-		relation    PGRelation
-		values      map[string]any
-		old         uint8
-		oldValues   map[string]any
-		lsn         pglogrepl.LSN
+		log             *slog.Logger
+		database        string
+		sid             string
+		opCode          string
+		sourceTable     string
+		destTable       string
+		destTableHasSID bool
+		id              int64
+		relation        PGRelation
+		values          map[string]any
+		old             uint8
+		oldValues       map[string]any
+		lsn             pglogrepl.LSN
 	}
 )
 
@@ -166,6 +167,7 @@ func processMessage(
 		}
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
+		_, op.destTableHasSID = DestTables[destTable].Columns["sid"]
 		values := getValues(rel, m.Tuple.Columns, typeMap)
 		op.values = values
 		op.id = sourceTable.ID
@@ -207,6 +209,7 @@ func processMessage(
 		op.values = getValues(rel, m.NewTuple.Columns, typeMap)
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
+		_, op.destTableHasSID = DestTables[destTable].Columns["sid"]
 		op.relation = rel
 		op.id = sourceTable.ID
 		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
@@ -247,6 +250,7 @@ func processMessage(
 		log.Debug("XLogDataV1 DELETE", "namespace", rel.Namespace, "relation", rel.RelationName, "values", op.values, "old", m.OldTupleType)
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
+		_, op.destTableHasSID = DestTables[destTable].Columns["sid"]
 		op.relation = relations[m.RelationID]
 		op.old = m.OldTupleType
 		op.id = sourceTable.ID

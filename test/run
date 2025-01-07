@@ -17,6 +17,17 @@ function gen() {
         ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
         ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into t0(name) values('test');" > log/gen.log 2>&1
     done
+    PORT=6012
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
+    ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/db1 -c "insert into d0(name) values('test');" > log/gen.log 2>&1
 }
 
 # Clean any existing process

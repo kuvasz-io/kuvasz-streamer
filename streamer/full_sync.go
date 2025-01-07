@@ -49,7 +49,7 @@ func (s syncChannel) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func writeDestination(log *slog.Logger, tableName string, columns string, s *syncChannel) {
+func writeDestination(log *slog.Logger, tableName string, hasSID bool, columns string, s *syncChannel) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3600)
 	defer cancel()
 	conn, err := DestConnectionPool.Acquire(ctx)
@@ -57,7 +57,12 @@ func writeDestination(log *slog.Logger, tableName string, columns string, s *syn
 		log.Error("cannot acquire connection to destination database", "error", err)
 		return
 	}
-	tag, err := conn.Conn().PgConn().CopyFrom(ctx, s, fmt.Sprintf("COPY %s(sid%s) FROM STDIN;", tableName, columns))
+	var tag pgconn.CommandTag
+	if hasSID {
+		tag, err = conn.Conn().PgConn().CopyFrom(ctx, s, fmt.Sprintf("COPY %s(sid, %s) FROM STDIN;", tableName, columns))
+	} else {
+		tag, err = conn.Conn().PgConn().CopyFrom(ctx, s, fmt.Sprintf("COPY %s(%s) FROM STDIN;", tableName, columns))
+	}
 	if err != nil {
 		log.Error("cannot COPY FROM", "table", tableName, "error", err)
 		return
@@ -74,6 +79,7 @@ func syncTable(log *slog.Logger,
 	sourceConnection *pgconn.PgConn) error {
 	log = log.With("sourceTable", sourceTableName, "destTable", destTableName)
 	ctx := context.Background()
+	hasSID := false
 
 	log.Debug("Starting full sync")
 	// Prepare channels between reader and writer
@@ -90,18 +96,31 @@ func syncTable(log *slog.Logger,
 	// Prepare column list
 	columns := ""
 	for c := range DestTables[destTableName].Columns {
-		if c == "sid" || strings.HasPrefix(c, "kvsz_") {
+		if strings.HasPrefix(c, "kvsz_") {
 			continue
 		}
-		columns = fmt.Sprintf("%s, %s", columns, c)
+		if c == "sid" {
+			hasSID = true
+			continue
+		}
+		if columns == "" {
+			columns = c
+		} else {
+			columns = fmt.Sprintf("%s, %s", columns, c)
+		}
 	}
 	log.Debug("Target columns", "columns", columns)
 
 	// Start writer
-	go writeDestination(log, destTableName, columns, s)
+	go writeDestination(log, destTableName, hasSID, columns, s)
 
 	// Start reader
-	copyStatement := fmt.Sprintf("COPY (SELECT '%s'%s FROM %s) TO STDOUT;", sid, columns, sourceTableName)
+	var copyStatement string
+	if hasSID {
+		copyStatement = fmt.Sprintf("COPY (SELECT '%s', %s FROM %s) TO STDOUT;", sid, columns, sourceTableName)
+	} else {
+		copyStatement = fmt.Sprintf("COPY (SELECT %s FROM %s) TO STDOUT;", columns, sourceTableName)
+	}
 	t0 := time.Now()
 	size = 0
 	tag, err := sourceConnection.CopyTo(ctx, s, copyStatement)
