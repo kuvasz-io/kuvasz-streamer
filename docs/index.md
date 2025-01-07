@@ -11,17 +11,49 @@ Kuvasz-streamer is a lightweight service written in Go that has no dependencies 
 
 ### High-performance
 
-Kuvasz-streamer was benchmarked at 10K tps with less than 1 second latency. It uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later. It opens multiple connections to the destination database and batches updates into separate transactions.
+Kuvasz-streamer uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later.
+
+It opens multiple connections to the destination database and load-shares among them.
+
+It batches updates into separate transactions to significantly increase performance.
 
 And in order not to overload a production database server, it also supports global rate-limiting.
 
+Kuvasz-streamer was [benchmarked](https://kuvasz.io/kuvasz-streamer-load-test/) at 10K tps with less than 1 second latency.
+
 ### Batteries included
 
-Kuvasz-streamer manages publications and replication slots on source databases, adding and deleting configured tables from the publication automatically. It also performs a full sync whenever a new table is added.
+Kuvasz-streamer takes the pain out of managing publications and replications slots:
+
+- It creates missing publications and replications slots on startup
+- It adds and removes configured tables from publications automatically
+- It performs a full sync whenever a new table is added
+
+It is also fully observable providing [Prometheus metrics]({% link 065-metrics.md %}) and extensive logging.
 
 ### Flexible
 
-Multiple table propagation models are supported: clone, history and append-only.
+Multiple table [streaming modes]({% link 040-streaming-modes.md %}) are supported
+
+- Clone: replicate the source table as-is
+- Append-only: replicate the source table but don't delete any records
+- History: Keep a full history of all changes with a timestamp
+
+### Full Postgres support
+
+Full PostgreSQL support is guaranteed with an extensive test suite:
+
+- All recent PostgreSQL versions
+  - from 12 to 17
+- All data types
+- Partitions
+- Schemas
+  - Source tables can be in any database and in any schema
+  - Destination tables are in a single database and a single schema
+
+### API and web interface
+
+The service provides an optional API and a web interface to easily manage publications and mapping.
 
 ## Use cases
 

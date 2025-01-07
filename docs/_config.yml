@@ -15,5 +15,7 @@ plugins:
 ga_tracking: G-R854TNLS2V
 
 nav_external_links:
-  - title: Test report
+  - title: Functional test report
     url: /report.html
+  - title: Load test report
+    url: https://kuvasz.io/kuvasz-streamer-load-test/
