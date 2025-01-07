@@ -13,7 +13,9 @@ func (op operation) insertHistory(tableName string, startTime time.Time, values 
 	log := log.With("op", "insertHistory", "table", tableName)
 
 	// Build argument list
-	args = append(args, arg{"sid", op.sid})
+	if op.destTableHasSID {
+		args = append(args, arg{"sid", op.sid})
+	}
 	args = append(args, arg{"kvsz_start", startTime})
 	args = append(args, arg{"kvsz_end", "9999-01-01 00:00:00"})
 	args = append(args, arg{"kvsz_deleted", false})
@@ -24,9 +26,9 @@ func (op operation) insertHistory(tableName string, startTime time.Time, values 
 	log.Debug("Dump params", "values", values)
 
 	// Build query
+	queryParameters := make([]any, 0)
 	attributes := args[0].Attribute
 	valuesIndices := "$1"
-	queryParameters := make([]any, 0)
 	queryParameters = append(queryParameters, args[0].Value)
 	for i := 1; i < len(args); i++ {
 		attributes = fmt.Sprintf("%s, %s", attributes, args[i].Attribute)
@@ -66,8 +68,12 @@ func (op operation) updateHistory(tableName string, relation PGRelation, values 
 	i++
 
 	// Add WHERE clause
-	query = fmt.Sprintf("%s WHERE sid=$%d AND kvsz_end='9999-01-01'", query, i)
-	queryParameters = append(queryParameters, op.sid)
+	if op.destTableHasSID {
+		query = fmt.Sprintf("%s WHERE sid=$%d AND kvsz_end='9999-01-01'", query, i)
+		queryParameters = append(queryParameters, op.sid)
+	} else {
+		query += "WHERE kvsz_end='9999-01-01'"
+	}
 	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 
 	// Run query
@@ -88,9 +94,13 @@ func (op operation) deleteHistory(tableName string, relation PGRelation, values 
 	t0 := time.Now()
 
 	// Build query
-	query = fmt.Sprintf("UPDATE %s set kvsz_deleted=true, kvsz_end=$2 WHERE sid=$1 AND kvsz_end='9999-01-01' ", tableName)
 	queryParameters := make([]any, 0)
-	queryParameters = append(queryParameters, op.sid)
+	if op.destTableHasSID {
+		query = fmt.Sprintf("UPDATE %s set kvsz_deleted=true, kvsz_end=$2 WHERE sid=$1 AND kvsz_end='9999-01-01' ", tableName)
+		queryParameters = append(queryParameters, op.sid)
+	} else {
+		query = fmt.Sprintf("UPDATE %s set kvsz_deleted=true, kvsz_end=$1 WHERE kvsz_end='9999-01-01' ", tableName)
+	}
 	queryParameters = append(queryParameters, t0)
 
 	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)

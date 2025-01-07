@@ -67,4 +67,22 @@ create table t7_2 partition of t7 for values from (20) to (39);
 create table t8(sid text, id int, name text);
 create table pt8(sid text, id int, name text);
 
+-- Without sid
+create table d0(id bigint, ts timestamptz, name text);
+create table d1(id int primary key, name text, salary int);
+create table rd2(id int, name text, salary int, extra text);
+create table d3(id int primary key, name text, salary int);
+create table d4(kvsz_id bigserial, id int, name text, salary int, 
+    kvsz_start timestamptz not null default '1900-01-01 00:00:00', 
+    kvsz_end timestamptz not null default '9999-01-01 00:00:00', 
+    kvsz_deleted boolean not null default false, 
+    primary key(id, kvsz_id));
+create table d6(id int, name text, longvalue text);
+create table d7(id int, name text) partition by range(id);
+create table d7_0 partition of d7 for values from (0)to (19);
+create table d7_2 partition of d7 for values from (20) to (39);
+create table d8(id int, name text);
+create table pd8(id int, name text);
+
+-- db2
 create table s1(sid text, id int, name text, salary int, garbage date);

@@ -6,8 +6,9 @@ Library           String
 Library           REST               http://127.0.0.1:8000
 
 *** Variables ***
-${SLEEP}          1.8
-@{PGVERSIONS}=    12    13    14    15    16    17
+${SLEEP}         1.8
+@{PGVERSIONS}=   12    13    14    15    16    17
+${SOURCE}        12
 ${SCHEMA}        ./schema
 ${ADMIN}         {"content-type": "application/json"}
 
@@ -26,7 +27,18 @@ Connect To All Databases
         Execute SQL string    truncate private.t8 restart identity
         Set Auto Commit
     END
+    Switch database            ${SOURCE}
+    Execute SQL string        truncate d1 restart identity
+    Execute SQL string        truncate d2 restart identity
+    Execute SQL string        truncate d3 restart identity
+    Execute SQL string        truncate d4 restart identity
+    Execute SQL string        truncate d6 restart identity
+    Execute SQL string        truncate d7 restart identity
+    Execute SQL string        truncate d8 restart identity
+    Execute SQL string        truncate private.d8 restart identity
+
     Connect To Database Using Custom Connection String       psycopg2    postgres://kuvasz:kuvasz@127.0.0.1:6012/dest?application_name=robot    alias=dest
+    Switch database           dest
     Execute SQL string        truncate t1 restart identity
     Execute SQL string        truncate rt2 restart identity
     Execute SQL string        truncate t3 restart identity
@@ -36,6 +48,14 @@ Connect To All Databases
     Execute SQL string        truncate t7 restart identity
     Execute SQL string        truncate t8 restart identity
     Execute SQL string        truncate pt8 restart identity
+    Execute SQL string        truncate d1 restart identity
+    Execute SQL string        truncate rd2 restart identity
+    Execute SQL string        truncate d3 restart identity
+    Execute SQL string        truncate d4 restart identity
+    Execute SQL string        truncate d6 restart identity
+    Execute SQL string        truncate d7 restart identity
+    Execute SQL string        truncate d8 restart identity
+    Execute SQL string        truncate pd8 restart identity
     Set Auto Commit
 
 Prepare db3
@@ -78,6 +98,27 @@ Statement should not propagate
         ${after}=               Query             ${DESTQUERY}
         Lists Should Be Equal   ${before}         ${after}
     END
+
+Single database statement should propagate
+    [Arguments]             ${ACTION}  ${SOURCEQUERY}    ${DESTQUERY}
+    Switch Database         ${SOURCE}
+    Execute SQL string      ${ACTION}
+    ${src}=                 Query            ${SOURCEQUERY}
+    Sleep                   ${SLEEP}
+    Switch Database         dest
+    ${dest}=                Query            ${DESTQUERY}
+    Lists Should Be Equal   ${src}           ${dest}
+
+Single database Statement should not propagate
+    [Arguments]             ${ACTION}  ${QUERY}
+    Switch Database         dest
+    ${before}=              Query            ${QUERY}
+    Switch Database         ${SOURCE}
+    Execute SQL string      ${ACTION}
+    Sleep                   ${SLEEP}
+    Switch Database         dest
+    ${after}=               Query             ${QUERY}
+    Lists Should Be Equal   ${before}         ${after}
 
 Execute on source
     [Arguments]             ${SQL}

@@ -66,6 +66,23 @@ create schema private;
 create table private.t8(id serial primary key, name text);
 create table public.t8(id serial primary key, name text);
 
+-- no sid
+create table d0(id bigserial, ts timestamptz default now(), name text);
+create table d1(id serial primary key, name text, salary int, garbage date);
+create table d2(id int, name text, salary int, extra text);
+alter table d2 replica identity full;
+create table d3(id serial primary key, name text, salary int, garbage date);
+create table d4(id serial primary key, name text, salary int, garbage date);
+create table d6(id int primary key, name text, longvalue text);
+create table d7(id int primary key, name text) partition by range(id);
+create table d7_0 partition of d7 for values from (0) to (9);
+create table d7_1 partition of d7 for values from (10) to (19);
+create table d7_2 partition of d7 for values from (20) to (29);
+create table d7_3 partition of d7 for values from (30) to (39);
+create table private.d8(id serial primary key, name text);
+create table public.d8(id serial primary key, name text);
+
+
 create database db2;
 \c db2
 create table s1(id serial primary key, name text, salary int, garbage date);

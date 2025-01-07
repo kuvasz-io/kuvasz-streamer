@@ -106,11 +106,16 @@ func (op operation) insertClone(tx pgx.Tx) error {
 
 	t0 := time.Now()
 	// Build query
-	columns := "sid"
-	valuesIndices := "$1"
+	columns := ""
+	valuesIndices := ""
+	i := 1
 	queryParameters := make([]any, 0)
-	queryParameters = append(queryParameters, op.sid)
-	i := 2
+	if op.destTableHasSID {
+		columns = "sid"
+		valuesIndices = "$1"
+		i++
+		queryParameters = append(queryParameters, op.sid)
+	}
 	for c, v := range op.values {
 		_, ok := DestTables[op.destTable].Columns[c]
 		if !ok {
@@ -118,15 +123,20 @@ func (op operation) insertClone(tx pgx.Tx) error {
 			continue
 		}
 		log.Debug("Add", "column", c, "value", v)
-		columns = fmt.Sprintf("%s, %s", columns, c)
-		valuesIndices = fmt.Sprintf("%s, $%d", valuesIndices, i)
+		if columns == "" {
+			columns = c
+			valuesIndices = "$1"
+		} else {
+			columns = fmt.Sprintf("%s, %s", columns, c)
+			valuesIndices = fmt.Sprintf("%s, $%d", valuesIndices, i)
+		}
 		queryParameters = append(queryParameters, v)
 		i++
 	}
 	query = fmt.Sprintf("INSERT INTO %s (%s) VALUES(%s) on conflict do nothing", op.destTable, columns, valuesIndices)
 
 	// Run query
-	log.Debug("insert", "query", query)
+	log.Debug("insert", "query", query, "queryParameters", queryParameters)
 	_, err = tx.Exec(context.Background(), query, queryParameters...)
 	if err != nil {
 		log.Error("can't insert", "table", op.destTable, "query", query, "error", err)
@@ -150,8 +160,11 @@ func (op operation) updateClone(tx pgx.Tx) error {
 
 	t0 := time.Now()
 	log.Debug("Dump params", "values", op.values, "oldvalues", op.oldValues, "old", op.old)
+
 	// Build argument list
-	args = append(args, arg{"sid", op.sid})
+	if op.destTableHasSID {
+		args = append(args, arg{"sid", op.sid})
+	}
 	args, err := op.buildSetList(op.destTable, args, op.values)
 	if err != nil {
 		return err
@@ -167,8 +180,12 @@ func (op operation) updateClone(tx pgx.Tx) error {
 	}
 
 	// Add WHERE clause
-	query = fmt.Sprintf("%s WHERE sid=$%d", query, i+1)
-	queryParameters = append(queryParameters, op.sid)
+	if op.destTableHasSID {
+		query = fmt.Sprintf("%s WHERE sid=$%d", query, i+1)
+		queryParameters = append(queryParameters, op.sid)
+	} else {
+		query += "WHERE true"
+	}
 
 	// add primary key
 	query, queryParameters = op.buildWhere(op.destTable, op.relation, op.values, op.oldValues, op.old, query, queryParameters)
@@ -195,10 +212,15 @@ func (op operation) deleteClone(tx pgx.Tx) error {
 
 	t0 := time.Now()
 	log.Debug("Dump params", "op", op)
-	// Build query
-	query = fmt.Sprintf("DELETE FROM %s WHERE sid=$1 ", op.destTable)
 	queryParameters := make([]any, 0)
-	queryParameters = append(queryParameters, op.sid)
+
+	// Build query
+	if op.destTableHasSID {
+		query = fmt.Sprintf("DELETE FROM %s WHERE sid=$1 ", op.destTable)
+		queryParameters = append(queryParameters, op.sid)
+	} else {
+		query = fmt.Sprintf("DELETE FROM %s WHERE true ", op.destTable)
+	}
 
 	query, queryParameters = op.buildWhere(op.destTable, op.relation, nil, op.values, op.old, query, queryParameters)
 	// Run query

@@ -32,7 +32,7 @@ GET all tbls should succeed
     Expect Response Body    ${schema}/tbls.json
     GET                     /api/tbl
     Integer                 response status                 200
-    Array                   response body                   minItems=11  maxItems=11
+    Array                   response body                   minItems=20  maxItems=20
 
 Create tbl should succeed
     Clear Expectations

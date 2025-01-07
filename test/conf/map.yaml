@@ -25,6 +25,7 @@
     t6:
     t7:
       partitions_regex: "t7_.*"
+    d0:
 
 - database: db2
   urls:
