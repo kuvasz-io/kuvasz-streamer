@@ -19,3 +19,7 @@ nav_external_links:
     url: /report.html
   - title: Load test report
     url: https://kuvasz.io/kuvasz-streamer-load-test/
+  - title: Github
+    url: https://github.com/kuvasz-io/kuvasz-streamer
+  - title: Kuvasz Tech blog
+    url: https://kuvasz.io
