@@ -6,19 +6,53 @@ Kuvasz-streamer is an open source change data capture (CDC) project that focuses
 
 ### Lightweight
 
-Kuvasz-streamer is a lightweight service written in Go that has no dependencies and no queuing. Run it as a system service or in a Docker container.
+Kuvasz-streamer is a lightweight service written in Go that has no dependencies and no queuing. Run it as a system service or in a Docker container. It can run in a full declarative mode where the configuration map is stored in a read-only YAML file and no files are written to disk. This mode is suitable for a CI/CD pipeline based configuration and a Kubernetes deployment. An interactive, database-backed mode is supported where the web interface can be used to modify the mapping configuration at runtime.
 
 ### High-performance
 
-Kuvasz-streamer was benchmarked at 10K tps with less than 1 second latency. It uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later. It opens multiple connections to the destination database and batches updates into separate transactions.
+Kuvasz-streamer uses the Postgres COPY protocol to perform the initial sync and the logical replication protocol later.
+
+It opens multiple connections to the destination database and load-shares among them.
+
+It batches updates into separate transactions to significantly increase performance.
+
+And in order not to overload a production database server, it also supports global rate-limiting.
+
+Kuvasz-streamer was [benchmarked](https://kuvasz.io/kuvasz-streamer-load-test/) at 10K tps with less than 1 second latency.
 
 ### Batteries included
 
-Kuvasz-streamer manages publications and replication slots on source databases, adding and deleting configured tables from the publication automatically. It also performs a full sync whenever a new table is added.
+Kuvasz-streamer takes the pain out of managing publications and replications slots:
+
+- It creates missing publications and replications slots on startup
+- It adds and removes configured tables from publications automatically
+- It performs a full sync whenever a new table is added
+
+It is also fully observable providing Prometheus metrics and extensive logging.
 
 ### Flexible
 
-Multiple table propagation models are supported: clone, history and append-only.
+Multiple table streaming modes are supported
+
+- Clone: replicate the source table as-is
+- Append-only: replicate the source table but don't delete any records
+- History: Keep a full history of all changes with a timestamp
+
+### Full Postgres support
+
+Full PostgreSQL support is guaranteed with an extensive test suite:
+
+- All recent PostgreSQL versions
+  - from 12 to 17
+- All data types
+- Partitions
+- Schemas
+  - Source tables can be in any database and in any schema
+  - Destination tables are in a single database and a single schema
+
+### API and web interface
+
+The service provides an optional API and a web interface to easily manage publications and mapping.
 
 ## Use cases
 
@@ -34,7 +68,7 @@ In a sensitive multi-tenant environment, each tenant may be assigned a separate 
 
 ### Database performance optimization
 
-In a typical microservice architecture, history data is kept to a minimum in order to provide quick query time and low latency to end users. However, historical data is important for AI/ML and reporting. `kuvasz-streamer` implements a no-delete strategy to some tables that does not propagate `DELETE` operations. Example usage includes transaction tables and audit history tables.
+In a typical microservice architecture, history data is kept to a minimum in order to provide quick query time and low latency to end users. However, historical data is important for AI/ML and reporting. `kuvasz-streamer` implements a no-delete strategy to some tables that dows not propagate `DELETE` operations. Example usage includes transaction tables and audit history tables.
 
 ### Postgres major version upgrade
 
@@ -58,6 +92,5 @@ All ideas and discussions are welcome. We use the [GitHub Discussions](https://g
 
 ### Pull Request Process
 
-Add tests for your changes. 
+Add tests for your changes.
 Ensure the project builds and passes all tests.
-
