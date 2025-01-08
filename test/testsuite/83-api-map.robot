@@ -1,11 +1,11 @@
 *** Settings ***
-Resource      00-common.robot
+Resource           00-common.robot
 Suite Setup        Connect To All Databases
 Suite Teardown     Disconnect From All Databases
 
 *** Test cases ***
 
-GET existing map by id should succeed
+GET existing map entry by id should succeed
     Clear Expectations
     Expect Response Body    ${SCHEMA}/map.json
     Set Headers             ${admin}
@@ -17,13 +17,13 @@ GET existing map by id should succeed
     String                  response body name              d1
     String                  response body type              clone
 
-GET non existing map by id should fail
+GET non existing map entry by id should fail
     Clear Expectations
     Set Headers             ${admin}
     GET                     /api/map/99
     Integer                 response status                 404
 
-GET map by invalid id should fail
+GET map entry by invalid id should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
