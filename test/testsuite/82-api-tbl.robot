@@ -1,6 +1,9 @@
 *** Settings ***
 Resource      00-common.robot
 
+*** Variables ***
+${TABLE_ID}            22
+
 *** Test cases ***
 
 GET existing tbl by id should succeed
@@ -60,7 +63,7 @@ Modify tbl should succeed
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/tbl.json
-    PUT                     /api/tbl/12                     {"db_id":3,"schema":"public","name":"bar","type":"clone","target":"bar"}
+    PUT                     /api/tbl/${TABLE_ID}            {"db_id":3,"schema":"public","name":"bar","type":"clone","target":"bar"}
     Integer                 response status                 200
     String                  response body name              bar
     
@@ -68,14 +71,14 @@ Modify tbl with missing parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/tbl/12                     {"db_id":3,"name":"bar","type":"clone"}
+    PUT                     /api/tbl/${TABLE_ID}            {"db_id":3,"name":"bar","type":"clone"}
     Integer                 response status                 400
 
 Modify tbl with invalid parameters should fail
     Clear Expectations
     Set Headers             ${admin}
     Expect Response Body    ${schema}/error.json
-    PUT                     /api/tbl/12                     {"db_id":3,"schema":"public","name":123,"type":"clone","target":"bar"}
+    PUT                     /api/tbl/${TABLE_ID}            {"db_id":3,"schema":"public","name":123,"type":"clone","target":"bar"}
     Integer                 response status                 400
 
 Modify non existing tbl should fail
@@ -95,7 +98,7 @@ Modify tbl with invalid id should fail
 Delete existing tbl should succeed
     Clear Expectations
     Set Headers             ${admin}
-    DELETE                  /api/tbl/12
+    DELETE                  /api/tbl/${TABLE_ID}
     Integer                 response status                 200
 
 Delete non-existing tbl should fail
