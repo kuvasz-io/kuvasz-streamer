@@ -68,7 +68,7 @@ Insert row in u0
     Execute SQL string           insert into u0(name) values('foo')
     Sleep                        ${SLEEP}
     Switch Database              dest
-    ${result}=                   Query                            select name from u0 where sid='12'
+    ${result}=                   Query                            select name from u0
     Should be equal as strings   ${result}[0][0]                  foo
 
 Clone existing table u1
@@ -76,7 +76,7 @@ Clone existing table u1
     Switch database              db3
     Execute SQL string           create table u1(id serial, name text)
     Switch database              dest
-    Execute SQL string           create table u1(sid text, id int, name text)
+    Execute SQL string           create table u1(id int, name text)
     Clone table                  u1                              21    \
 
 Insert row in u1
@@ -84,7 +84,7 @@ Insert row in u1
     Execute SQL string           insert into u1(name) values('foo')
     Sleep                        ${SLEEP}
     Switch Database              dest
-    ${result}=                   Query                            select name from u1 where sid='12'
+    ${result}=                   Query                            select name from u1
     Should be equal as strings   ${result}[0][0]                  foo
 
 Clone non-existing table with pre-existing data u2
@@ -102,7 +102,7 @@ Insert row in u2
     Execute SQL string           insert into u2(name) values('bar')
     Sleep                        ${SLEEP}
     Switch Database              dest
-    ${result}=                   Query                            select name from u2 where sid='12'
+    ${result}=                   Query                            select name from u2
     Should be equal as strings   ${result}[0][0]                  foo1
     Should be equal as strings   ${result}[1][0]                  foo2
     Should be equal as strings   ${result}[2][0]                  foo3
@@ -124,7 +124,7 @@ Insert row in u3
     Execute SQL string           insert into u3(id, name) values(10, 'foo')
     Sleep                        ${SLEEP}
     Switch Database              dest
-    ${result}=                   Query                            select name from u3 where sid='12'
+    ${result}=                   Query                            select name from u3
     Should be equal as strings   ${result}[0][0]                  foo
 
 Clone renamed and partitioned table u4
@@ -142,7 +142,7 @@ Insert row in u4
     Execute SQL string           insert into u4(id, name) values(10, 'foo')
     Sleep                        ${SLEEP}
     Switch Database              dest
-    ${result}=                   Query                            select name from u4p where sid='12'
+    ${result}=                   Query                            select name from u4p
     Should be equal as strings   ${result}[0][0]                  foo
 
 Clone append, renamed table u5
@@ -156,6 +156,6 @@ Insert row in u5
     Execute SQL string           insert into u5(id, name) values(10, 'foo')
     Sleep                        ${SLEEP}
     Switch Database              dest
-    ${result}=                   Query                            select name from u5p where sid='12'
+    ${result}=                   Query                            select name from u5p
     Should be equal as strings   ${result}[0][0]                  foo
 

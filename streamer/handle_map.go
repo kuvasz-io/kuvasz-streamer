@@ -130,9 +130,15 @@ func mapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Create table if not present
 	if _, ok := DestTables[fullTargetName]; !ok {
-		q := "CREATE TABLE " + target + "(sid text"
+		q := "CREATE TABLE " + target + "("
+		first := true
 		for k, v := range t.SourceColumns {
-			q += ", " + k + " " + v.ColumnType
+			if first {
+				first = false
+			} else {
+				q += ", "
+			}
+			q += k + " " + v.ColumnType
 		}
 		q += ");"
 		log.Debug("Creating table", "name", t.Name, "columns", t.SourceColumns, "q", q)
