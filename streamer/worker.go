@@ -123,6 +123,9 @@ func SetCommittedLSN(database, sid string, lsn pglogrepl.LSN) {
 	dbsid := database + "-" + sid
 
 	for i := range Workers {
+		Workers[i].s.Lock()
+		defer Workers[i].s.Unlock()
+
 		status := Workers[i].s.m[dbsid]
 		status.CommittedLSN = lsn
 		Workers[i].s.m[dbsid] = status
