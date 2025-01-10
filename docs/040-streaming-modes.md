@@ -7,6 +7,8 @@ nav_order: 40
 
 # Streaming modes
 
+The streaming mode can be defined per table and affects how replication operations are applied on the destination. This is one of the main differences with normal Postgres logical replication where only exact copies are supported.
+
 ## type = `clone`
 These are table that need to be identical between source and destination and where historical data is not important. Example: product types, colors.
 
