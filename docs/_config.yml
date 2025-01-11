@@ -16,6 +16,10 @@ ga_tracking: G-R854TNLS2V
 logo: /assets/images/logo.png
 favicon_ico: /assets/images/favicon.ico
 footer_content: "Copyright &copy; 2024-2025 <a href=\"https://kuvasz.io/about/\">George Yazbek</a>. Distributed by an <a href=\"https://github.com/kuvasz-io/kuvasz-streamer/tree/main/LICENSE\">AGPL license.</a>"
+mermaid:
+  # Version of mermaid library
+  # Pick an available version from https://cdn.jsdelivr.net/npm/mermaid/
+  version: "11.4.1"
 
 nav_external_links:
   - title: Functional test report
