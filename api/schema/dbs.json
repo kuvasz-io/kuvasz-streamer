@@ -1,6 +1,6 @@
 {
     "type": "array",
     "items": {
-        "$ref": "file:../../api/schema/db.json"
+        "$ref": "file:../api/schema/db.json"
     }
 }
