@@ -1,6 +1,0 @@
-{
-    "type": "array",
-    "items": {
-        "$ref": "file:./schema/map.json"
-    }
-}

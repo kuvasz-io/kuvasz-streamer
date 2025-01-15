@@ -1,0 +1,21 @@
+description: Bad Request
+content:
+  application/json:
+    schema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: "0001"
+        message:
+          type: string
+          description: Badly formatted request
+          example: Invalid request, check parameters
+        details:
+          type: string
+          description: Low level error to help debugging, present only in developer mode
+          example: Unmarshal error
+      required:
+        - code
+        - message

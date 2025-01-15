@@ -1,0 +1,20 @@
+description: Forbidden
+content:
+  application/json:
+    schema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: 0003
+        message:
+          type: string
+          description: User is not authorized to access this resource. Check authorization permissions and passed token.
+          example: User is not authorized to access this resource.
+        details:
+          type: string
+          description: Low level error to help debugging, present only in developer mode
+      required:
+        - code
+        - message

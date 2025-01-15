@@ -1,0 +1,17 @@
+description: Not found
+content:
+  application/json:
+    schema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: NOT_FOUND
+        message:
+          type: string
+          description: ID is not found in collection
+          example: Database schema not found
+      required:
+        - code
+        - message

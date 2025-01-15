@@ -1,5 +1,6 @@
 {
     "type": "object",
+    "description": "Database schema",
     "properties": {
         "id": {
             "type": "integer",

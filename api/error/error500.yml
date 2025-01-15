@@ -1,0 +1,21 @@
+description: Server error
+content:
+  application/json:
+    schema:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+          example: 0000
+        message:
+          type: string
+          description: Service is currently unable to process request.
+          example: Server is currently unable to process request. Try later.
+        details:
+          type: string
+          description: Low level error to help debugging, present only in developer mode
+          example: No database connection
+      required:
+        - code
+        - message

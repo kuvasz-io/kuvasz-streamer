@@ -1,0 +1,195 @@
+openapi: 3.0.3
+info:
+  title: Kuvasz-streamer
+  description: |-
+    Kuvasz-streamer is an open source change data capture (CDC) project that focuses exclusively on Postgres. It is tightly integrated with Postgres Logical Replication to provide high performance, low latency replication.
+
+    This is the specification of the management API that allows you to add sources, tables, modify streaming modes and operate the service.
+    
+    Some useful links:
+    - [The kuvasz-streamer repository](https://github.com/kuvasz-io/kuvasz-streamer)
+    - [Documentation](https://streamer.kuvasz.io/)
+  contact:
+    email: kuvasz@kuvasz.io
+  license:
+    name: GNU Affero General Public License 3
+    url: https://www.gnu.org/licenses/agpl-3.0.en.html
+  version: 1.0.0
+externalDocs:
+  description: Find out more about Kuvasz-streamer
+  url: https://streamer.kuvasz.io
+security:
+  - JWT: []
+components:
+  securitySchemes:
+    JWT:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+servers:
+  - url: https://sandbox.kuvasz.io/api
+tags:
+  - name: Database
+    description: Manage source databases. A database can have multiple sources (URLs) in the case of multi-tenant solutions.
+  - name: URL
+    description: Manage URLs. A URL is a single complete postgres connection string to connect to a database instance.
+  - name: Table
+    description: Manage tables and their replication settings.
+paths:
+  /db:
+    description: asdfsdf
+    get:
+      tags:
+        - Database
+      summary: Get all database schemas
+      description: Get a list of all configured database schemas.
+      operationId: getAllDatabases
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: ./schema/db.json
+        400:
+          $ref: './error/error400.yml'
+        403:
+          $ref: './error/error403.yml'
+        500:
+          $ref: './error/error500.yml'
+    post:
+      operationId: postDatabase
+      summary: Create a database schema
+      description: Create a new database schema.
+      tags:
+        - Database
+      requestBody:
+        description: Database
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Database schema name
+                  example: wordpress
+              required:
+                - name
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: './schema/db.json'
+        400:
+          $ref: './error/error400.yml'
+        403:
+          $ref: './error/error403.yml'
+        500:
+          $ref: './error/error500.yml'
+  /db/{dbid}:
+    get:
+      tags:
+        - Database
+      summary: Get a specific database schema
+      description: Get information about a specific database.
+      operationId: getDatabase
+      parameters:
+        - name: dbid
+          in: path
+          description: ID of the database schema to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: './schema/db.json'
+        400:
+          $ref: './error/error400.yml'
+        403:
+          $ref: './error/error403.yml'
+        500:
+          $ref: './error/error500.yml'
+    delete:
+      tags:
+        - Database
+      summary: Delete a database schema
+      description: Delete a specific database schema. It cannot have URLs and tables associated with it.
+      operationId: deleteDatabase
+      parameters:
+        - name: dbid
+          in: path
+          description: ID of the database schema to return
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: './schema/db.json'
+        400:
+          $ref: './error/error400.yml'
+        403:
+          $ref: './error/error403.yml'
+        404:
+          $ref: './error/error404.yml'
+        500:
+          $ref: './error/error500.yml'
+    put:
+      tags:
+        - Database
+      summary: Modify a database schema
+      description: Modify an existing database schema
+      operationId: putDatabase
+      parameters:
+        - name: dbid
+          in: path
+          description: ID of the database schema to modify
+          required: true
+          schema:
+            type: integer
+            format: int64
+            example: 123
+      requestBody:
+        description: Database
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Database schema name
+                  example: wordpress
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: './schema/db.json'
+        400:
+          $ref: './error/error400.yml'
+        403:
+          $ref: './error/error403.yml'
+        404:
+          $ref: './error/error404.yml'
+        500:
+          $ref: './error/error500.yml'
