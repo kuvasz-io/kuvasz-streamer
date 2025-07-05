@@ -24,17 +24,19 @@ func pluginArguments(pgVersion int, slotName string) (int, []string) {
 	case 12, 13:
 		arg = append(arg, "proto_version '1'")
 		protocolVersion = 1
-	case 14:
-		arg = append(arg, "proto_version '2'")
 	default:
 		arg = append(arg, "proto_version '2'")
 	}
 	arg = append(arg, fmt.Sprintf("publication_names '%s'", slotName))
-	if pgVersion > 13 {
+	if pgVersion >= 14 {
 		arg = append(arg, "binary 'false'")
 		arg = append(arg, "messages 'true'")
 		arg = append(arg, "streaming 'true'")
 	}
+	if pgVersion >= 16 {
+		arg = append(arg, "origin 'none'")
+	}
+	log.Debug("calculate args", "arg", arg)
 	return protocolVersion, arg
 }
 
@@ -93,8 +95,8 @@ func pgVersion(log *slog.Logger, conn *pgx.Conn) (int, error) {
 	if version < 12 {
 		return version, fmt.Errorf("unsupported postgres version=%d, minversion=12", version)
 	}
-	if version > 16 {
-		log.Warn("New postgres version. may not be supported", "version", version, "maxversion", 16)
+	if version > 17 {
+		log.Warn("New postgres version. may not be supported", "version", version, "maxversion", 17)
 	}
 	return version, nil
 }

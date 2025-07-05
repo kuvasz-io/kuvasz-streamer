@@ -370,3 +370,14 @@ func FindTableByID(id int64) MappingEntry {
 	}
 	return MappingEntry{}
 }
+
+func FindTableByName(db string, name string) MappingEntry {
+	schema, table := splitSchema(name)
+	log.Debug("Finding table", "MappingTable", MappingTable, "db", db, "name", name, "schema", schema, "table", table)
+	for i := range MappingTable {
+		if MappingTable[i].DBName == db && MappingTable[i].Schema == schema && MappingTable[i].Name == table {
+			return MappingTable[i]
+		}
+	}
+	return MappingEntry{}
+}

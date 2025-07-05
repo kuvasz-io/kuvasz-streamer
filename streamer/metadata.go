@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -149,23 +150,63 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 	return pgTables, nil
 }
 
-func SetupDestination() error {
-	var err error
+func setupOrigin(url string, origin string) error {
+	var oid pgtype.Uint32
+	conn, err := pgx.Connect(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("cannot open connection to destination: %s, error=%w", url, err)
+	}
+	defer conn.Close(context.Background())
 
-	// Connect to target database if not already connected
-	DestConnectionPool, err = pgxpool.New(context.Background(), config.Database.URL)
+	log.Info("Creating Origin", "origin", "kuvasz_"+origin)
+	err = conn.QueryRow(context.Background(), "select pg_replication_origin_oid('kuvasz_"+origin+"')").Scan(&oid)
+	if err != nil {
+		return fmt.Errorf("cannot get origin oid, error=%w", err)
+	}
+	if oid.Valid {
+		log.Debug("Origin already exists", "origin", "kuvasz_"+origin)
+		return nil
+	}
+	err = conn.QueryRow(context.Background(), "select pg_replication_origin_create('kuvasz_"+origin+"')").Scan(&oid)
+	if err != nil {
+		return fmt.Errorf("cannot create origin: kuvasz_%s, error=%w", origin, err)
+	}
+	return nil
+}
+
+func SetupDestination() error {
+	// Create origin
+	err := setupOrigin(config.Database.URL, config.Database.Origin)
+	if err != nil {
+		return err
+	}
+	// Create connection pool
+	pgconfig, err := pgxpool.ParseConfig(config.Database.URL)
+	if err != nil {
+		return fmt.Errorf("failed to parse database url:%s, err:%w", config.Database.URL, err)
+	}
+	pgconfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		_, err := conn.Exec(ctx, "select pg_replication_origin_session_setup('kuvasz_"+config.Database.Origin+"')")
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	DestConnectionPool, err = pgxpool.NewWithConfig(context.Background(), pgconfig)
 	if err != nil {
 		return fmt.Errorf("can't connect to target database, url=%s, error=%w", config.Database.URL, err)
 	}
 	log.Info("Connected to target database", "url", config.Database.URL)
 
-	// Get destination metadata
-	log.Info("Getting destination table metadata")
+	// Get connection
 	conn, err := DestConnectionPool.Acquire(context.Background())
 	if err != nil {
 		return fmt.Errorf("can't get destination table metadata: error=%w", err)
 	}
 	defer conn.Release()
+
+	// Get destination metadata
+	log.Info("Getting destination table metadata")
 	DestTables, err = GetTables(log, conn.Conn(), config.Database.Schema)
 	if err != nil {
 		return fmt.Errorf("can't get destination table metadata, error=%w", err)

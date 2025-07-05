@@ -93,6 +93,10 @@ func syncTable(log *slog.Logger,
 		bytesTotal:      syncBytesTotal.WithLabelValues(db, sid, sourceTableName),
 	}
 
+	// Find map entry for source table
+	mapentry := FindTableByName(db, sourceTableName)
+	log.Debug("Found mapping entry", "map", MappingTable, "mapentry", mapentry)
+
 	// Prepare column list
 	columns := ""
 	for c := range DestTables[destTableName].Columns {
@@ -101,6 +105,10 @@ func syncTable(log *slog.Logger,
 		}
 		if c == "sid" {
 			hasSID = true
+			continue
+		}
+		if _, ok := mapentry.SourceColumns[c]; !ok {
+			log.Debug("Target column not found in source table", "column", c, "mapentry.SourceColumns[c]", mapentry.SourceColumns[c])
 			continue
 		}
 		if columns == "" {

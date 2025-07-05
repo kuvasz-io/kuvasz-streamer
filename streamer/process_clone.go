@@ -184,7 +184,7 @@ func (op operation) updateClone(tx pgx.Tx) error {
 		query = fmt.Sprintf("%s WHERE sid=$%d", query, i+1)
 		queryParameters = append(queryParameters, op.sid)
 	} else {
-		query += "WHERE true"
+		query += " WHERE true"
 	}
 
 	// add primary key
