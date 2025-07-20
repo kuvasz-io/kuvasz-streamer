@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"regexp"
-	"sort"
 
 	"github.com/jackc/pgx/v5"
 	_ "github.com/mattn/go-sqlite3"
@@ -31,47 +30,17 @@ type (
 		commandChannel chan string
 	}
 	SourceTable struct {
-		ID              int64  `json:"tbl_id"`
-		Type            string `json:"type"             yaml:"type,omitempty"`
-		Target          string `json:"target"           yaml:"target,omitempty"`
-		PartitionsRegex string `json:"partitions_regex" yaml:"partitions_regex,omitempty"`
+		ID              int64             `json:"tbl_id"`
+		Type            string            `json:"type"             yaml:"type,omitempty"`
+		Target          string            `json:"target"           yaml:"target,omitempty"`
+		Filter          string            `json:"filter"           yaml:"filter,omitempty"`
+		Set             map[string]string `json:"set"              yaml:"set,omitempty"`
+		Insert          string            `json:"insert"           yaml:"insert,omitempty"`
+		PartitionsRegex string            `json:"partitions_regex" yaml:"partitions_regex,omitempty"`
 		compiledRegex   *regexp.Regexp
 	}
 	SourceTables map[string]SourceTable
 )
-
-type MappingEntry struct {
-	ID              int64               `json:"id"`
-	DBId            int64               `json:"db_id"`
-	DBName          string              `json:"db_name"`
-	Schema          string              `json:"schema"`
-	Table           string              `json:"table"`
-	Name            string              `json:"name"`
-	Type            string              `json:"type"`
-	Target          string              `json:"target"`
-	Partitions      []string            `json:"partitions"`
-	PartitionsRegex *string             `json:"partitions_regex"`
-	Replicated      bool                `json:"replicated"`
-	Present         bool                `json:"present"`
-	SourceColumns   map[string]PGColumn `json:"source_columns"`
-	DestColumns     map[string]PGColumn `json:"dest_columns"`
-}
-
-type mappingTable []MappingEntry
-
-func (m mappingTable) Len() int { return len(m) }
-func (m mappingTable) Less(i, j int) bool {
-	if m[i].DBId < m[j].DBId {
-		return true
-	}
-	if m[i].DBId > m[j].DBId {
-		return false
-	}
-	return m[i].Name < m[j].Name
-}
-func (m mappingTable) Swap(i, j int) { m[i], m[j] = m[j], m[i] }
-
-var MappingTable mappingTable
 
 func ReadMapDatabase(db *sql.DB) (DBMap, error) {
 	var jsonData string
@@ -286,98 +255,4 @@ func getSourceTables(log *slog.Logger, s SourceDatabase) (PGTables, error) {
 		return PGTables{}, fmt.Errorf("error getting tables, error=%w", err)
 	}
 	return sourceTables, nil
-}
-
-func RefreshMappingTable() error {
-	var err error
-	// Step 1. Get list of destination tables
-	destConn, err := DestConnectionPool.Acquire(context.Background())
-	if err != nil {
-		return fmt.Errorf("can't acquire connection to destination database, error=%w", err)
-	}
-	defer destConn.Release()
-
-	DestTables, err = GetTables(log, destConn.Conn(), config.Database.Schema)
-	if err != nil {
-		return fmt.Errorf("can't get destination table metadata, error=%w", err)
-	}
-
-	// Step 2. Get configured database map
-	var configuredMap DBMap
-	if config.App.MapDatabase != "" {
-		configuredMap, err = ReadMapDatabase(ConfigDB)
-		if err != nil {
-			return fmt.Errorf("can't read database map, error=%w", err)
-		}
-	} else {
-		configuredMap = dbmap
-	}
-
-	// Step 3. Loop over provided URLs, get source tables and merge
-	var result mappingTable
-
-	for _, db := range configuredMap {
-		sourceTables, err := getSourceTables(log, db)
-		if err != nil {
-			log.Error("Can't get source table metadata", "error", err)
-			continue
-		}
-		if len(sourceTables) == 0 {
-			log.Debug("No source tables found", "db", db.Name)
-			continue
-		}
-		for k := range sourceTables {
-			configuredTable := configuredMap.findConfiguredTable(db.ID, k)
-			schema, table := splitSchema(k)
-			t := MappingEntry{
-				DBId:            db.ID,
-				DBName:          db.Name,
-				Schema:          schema,
-				Name:            table,
-				Type:            configuredTable.Type,
-				Target:          configuredTable.Target,
-				Partitions:      sourceTables[k].Partitions,
-				PartitionsRegex: &configuredTable.PartitionsRegex,
-				Replicated:      (configuredTable.Type != ""),
-				SourceColumns:   sourceTables[k].Columns,
-			}
-			destName := configuredTable.Target
-			if destName == "" {
-				destName = k
-			}
-			d, ok := DestTables[destName]
-			if t.Type != "" || ok {
-				t.Present = true
-				t.DestColumns = d.Columns
-			}
-			result = append(result, t)
-		}
-	}
-	sort.Sort(result)
-	for i := range result {
-		result[i].ID = int64(i)
-	}
-	MappingTable = result
-	log.Debug("Refreshed mapping table", "MappingTable", MappingTable)
-	return nil
-}
-
-func FindTableByID(id int64) MappingEntry {
-	for i := range MappingTable {
-		if MappingTable[i].ID == id {
-			return MappingTable[i]
-		}
-	}
-	return MappingEntry{}
-}
-
-func FindTableByName(db string, name string) MappingEntry {
-	schema, table := splitSchema(name)
-	log.Debug("Finding table", "MappingTable", MappingTable, "db", db, "name", name, "schema", schema, "table", table)
-	for i := range MappingTable {
-		if MappingTable[i].DBName == db && MappingTable[i].Schema == schema && MappingTable[i].Name == table {
-			return MappingTable[i]
-		}
-	}
-	return MappingEntry{}
 }

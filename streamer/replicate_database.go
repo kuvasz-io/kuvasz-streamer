@@ -124,7 +124,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 		return fmt.Errorf("cannot parse url=%s, error=%w", databaseURL, err)
 	}
 	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-	dbName := parsedConfig.Database
+	// dbName := parsedConfig.Database
 	log.Info("Connecting", "databaseURL", databaseURL)
 	ctx := context.Background()
 	conn, err := pgx.ConnectConfig(ctx, parsedConfig)
@@ -165,7 +165,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	}
 
 	// Check existing publication and create if needed, drop replication slot if required
-	slotName := "kuvasz_" + dbName
+	slotName := "kuvasz_" + database.Name + "_" + url.SID
 	slotName = strings.ReplaceAll(slotName, "-", "_")
 	var publication, slot int
 	err = conn.QueryRow(context.Background(), `with publication as (
@@ -187,7 +187,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	var newTables []string
 	//nolint:nestif // this cannot be really simplified
 	if publication == 1 && slot == 1 {
-		newTables, err = SyncPublications(log, conn, database)
+		newTables, err = SyncPublications(log, conn, database, url.SID)
 		if err != nil {
 			return fmt.Errorf("cannot sync publications: %w", err)
 		}

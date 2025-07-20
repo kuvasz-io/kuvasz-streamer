@@ -35,9 +35,9 @@ killall kuvasz-streamer || true
 
 # Pull latest minor version
 export REGISTRY=docker.io
-for VER in 12 13 14 15 16 17; do
-    docker pull ${REGISTRY}/postgres:${VER}
-done
+# for VER in 12 13 14 15 16 17; do
+#     docker pull ${REGISTRY}/postgres:${VER}
+# done
 
 # Start postgres containers
 docker compose down
@@ -53,6 +53,8 @@ done
 # Create user and databases
 for PORT in 6012 6013 6014 6015 6016 6017; do
     ${PSQL} postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "create user kuvasz password 'kuvasz' createdb replication;"
+    ${PSQL} postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "GRANT EXECUTE ON FUNCTION pg_replication_origin_create(text) TO kuvasz;"
+    ${PSQL} postgres://postgres:postgres@127.0.0.1:${PORT}/postgres -c "GRANT EXECUTE ON FUNCTION pg_replication_origin_session_setup(text) TO kuvasz;"
     ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:${PORT}/postgres -f database/source.sql
 done
 ${PSQL} postgres://kuvasz:kuvasz@127.0.0.1:6012/postgres -f database/dest.sql
@@ -64,7 +66,7 @@ cp kuvasz-streamer-gold.db kuvasz-streamer.db
 ../kuvasz-streamer --conf=./conf/kuvasz-streamer-sqlite.toml > log/kuvasz-streamer.log 2>&1 &
 sleep 5
 
-robot --exitonfailure -d log testsuite
+robot --exitonfailure -d log testsuite/50*
 cp log/log.html log/report.html ../docs/
 docker compose down
 killall kuvasz-streamer

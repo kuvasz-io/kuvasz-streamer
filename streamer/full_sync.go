@@ -53,6 +53,7 @@ func writeDestination(log *slog.Logger, tableName string, hasSID bool, columns s
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3600)
 	defer cancel()
 	conn, err := DestConnectionPool.Acquire(ctx)
+	defer conn.Release()
 	if err != nil {
 		log.Error("cannot acquire connection to destination database", "error", err)
 		return
@@ -68,7 +69,6 @@ func writeDestination(log *slog.Logger, tableName string, hasSID bool, columns s
 		return
 	}
 	log.Debug("COPY FROM", "tag", tag)
-	conn.Release()
 }
 
 func syncTable(log *slog.Logger,
@@ -94,7 +94,11 @@ func syncTable(log *slog.Logger,
 	}
 
 	// Find map entry for source table
-	mapentry := FindTableByName(db, sourceTableName)
+	mapentry, err := MappingTable.FindByName(db, sourceTableName)
+	if err != nil {
+		log.Error("cannot match table", "database", db, "table", sourceTableName)
+		return fmt.Errorf("cannot find table")
+	}
 	log.Debug("Found mapping entry", "map", MappingTable, "mapentry", mapentry)
 
 	// Prepare column list

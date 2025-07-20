@@ -29,7 +29,7 @@ func mapGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log := log.With("id", id)
-	result := FindTableByID(id)
+	result := MappingTable.FindByID(id)
 	if result.DBName == "" {
 		req.ReturnError(w, http.StatusNotFound, "not_found", "Not found", nil)
 		return
