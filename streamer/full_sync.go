@@ -97,7 +97,7 @@ func syncTable(log *slog.Logger,
 	mapentry, err := MappingTable.FindByName(db, sourceTableName)
 	if err != nil {
 		log.Error("cannot match table", "database", db, "table", sourceTableName)
-		return fmt.Errorf("cannot find table")
+		return fmt.Errorf("cannot find table: %s", sourceTableName)
 	}
 	log.Debug("Found mapping entry", "map", MappingTable, "mapentry", mapentry)
 
@@ -159,7 +159,7 @@ func syncAllTables(
 	sourceConnection *pgconn.PgConn) error {
 	log.Info("Starting full sync for all tables", "sourceTables", sourceTables)
 	for sourceTableName := range sourceTables {
-		_, destTableName, err := sourceTables.GetTable(sourceTableName)
+		destTableName, err := sourceTables.GetTable(sourceTableName)
 		if err != nil {
 			return err
 		}
@@ -178,7 +178,7 @@ func syncNewTables(
 	sourceConnection *pgconn.PgConn) error {
 	log.Info("Starting full sync for new tables", "sourceTables", sourceTables)
 	for i := range newTables {
-		_, destTableName, err := sourceTables.GetTable(newTables[i])
+		destTableName, err := sourceTables.GetTable(newTables[i])
 		if err != nil {
 			return err
 		}

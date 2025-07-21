@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/google/cel-go/cel"
@@ -38,7 +39,7 @@ func ConvertPGColumnsToEnv(c map[string]PGColumn) map[string]any {
 	return env
 }
 
-func prepareExpression(expression string, variables map[string]any) (cel.Program, error) {
+func prepareExpression(expression string, variables map[string]any) (cel.Program, error) { //nolint:ireturn // we have no choice here
 	envOpts := []cel.EnvOption{
 		cel.OptionalTypes(),
 		cel.HomogeneousAggregateLiterals(),
@@ -81,7 +82,7 @@ func prepareExpression(expression string, variables map[string]any) (cel.Program
 			celType = cel.BytesType // Or cel.ListType(cel.DynType)
 		default:
 			celType = cel.DynType
-			fmt.Printf("Warning: Could not infer specific CEL type for key '%s', type '%T' using cel.DynType.\n", key, value)
+			log.Debug("Warning: Could not infer specific CEL type, using cel.DynType", "key", key, "type", reflect.TypeOf(value))
 		}
 		if key == "type" {
 			key = "_type"
@@ -115,7 +116,10 @@ func evalExpression(program cel.Program, variables map[string]any) (any, error) 
 	case types.Timestamp:
 		return v.Time, nil
 	case types.Null:
-		return nil, nil
+		return nil, nil //nolint:nilnil // this is a false alert
 	}
-	return output, err
+	if err != nil {
+		return output, fmt.Errorf("cannot evaluate expression: %w", err)
+	}
+	return output, nil
 }

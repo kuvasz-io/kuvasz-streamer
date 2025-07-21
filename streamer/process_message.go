@@ -93,7 +93,7 @@ func getEnv(rel PGRelation, columns []*pglogrepl.TupleDataColumn, typeMap *pgtyp
 			// This TOAST value was not changed. TOAST values are not stored in the tuple,
 			// and logical replication doesn't want to spend a disk read to fetch its value for you.
 		case 't': // text
-			if rel.Columns[idx].DataTypeOID == 2950 { //uuid
+			if rel.Columns[idx].DataTypeOID == 2950 { // uuid
 				values[colName] = string(col.Data)
 				continue
 			}

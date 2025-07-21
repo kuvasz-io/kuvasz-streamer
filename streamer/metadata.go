@@ -5,9 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math/rand"
+	"math/rand/v2"
 	"strings"
-	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -154,10 +153,9 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 
 func randomString() string {
 	const charset = "abcdefghijklmnopqrstuvwxyz"
-	var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
 	b := make([]byte, 8)
 	for i := range b {
-		b[i] = charset[seededRand.Intn(len(charset))]
+		b[i] = charset[rand.IntN(len(charset))] //nolint:gosec // this is just for non collision of files
 	}
 	return string(b)
 }
@@ -177,11 +175,11 @@ func SetupDestination() error {
 		pgconfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 			var oid pgtype.Uint32
 			log.Info("Creating Origin", "origin", "kuvasz_"+origin)
-			err = conn.QueryRow(context.Background(), "select pg_replication_origin_create('"+origin+"')").Scan(&oid)
+			err = conn.QueryRow(ctx, "select pg_replication_origin_create('"+origin+"')").Scan(&oid)
 			if err != nil {
 				return fmt.Errorf("cannot create origin: %s, error: %w", origin, err)
 			}
-			_, err := conn.Exec(context.Background(), "select pg_replication_origin_session_setup('"+origin+"')")
+			_, err := conn.Exec(ctx, "select pg_replication_origin_session_setup('"+origin+"')")
 			if err != nil {
 				return fmt.Errorf("cannot create origin: %s, error: %w", origin, err)
 			}

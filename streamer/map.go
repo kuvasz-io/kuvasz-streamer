@@ -204,12 +204,12 @@ func (s SourceTables) Find(t string) string {
 	return ""
 }
 
-func (s SourceTables) GetTable(table string) (*SourceTable, string, error) {
+func (s SourceTables) GetTable(table string) (string, error) {
 	var destTable string
 	log.Debug("GetTable", "table", table, "sourceTables", s, "DestTables", DestTables)
 	sourceTable := s.Find(table)
 	if sourceTable == "" {
-		return nil, "", fmt.Errorf("unconfigured source table=%s", table)
+		return "", fmt.Errorf("unconfigured source table=%s", table)
 	}
 	t := s[sourceTable]
 	if t.Target == "" {
@@ -219,9 +219,9 @@ func (s SourceTables) GetTable(table string) (*SourceTable, string, error) {
 	}
 	_, ok := DestTables[destTable]
 	if !ok {
-		return nil, "", fmt.Errorf("destination table does not exist, table=%s", destTable)
+		return "", fmt.Errorf("destination table does not exist, table=%s", destTable)
 	}
-	return &t, destTable, nil
+	return destTable, nil
 }
 
 func (m DBMap) findConfiguredTable(dbID int64, name string) SourceTable {

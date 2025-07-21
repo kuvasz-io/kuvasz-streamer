@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"os"
 	"regexp"
 	"sort"
 
@@ -78,12 +77,12 @@ func (m mappingTable) FindByName(db string, name string) (MappingEntry, error) {
 			return m[i], nil
 		}
 	}
-	return MappingEntry{}, fmt.Errorf("table not found")
+	return MappingEntry{}, fmt.Errorf("table not found, db:%s, table: %s", db, table)
 }
 
 var MappingTable mappingTable
 
-func RefreshMappingTable() error {
+func RefreshMappingTable() error { //nolint:gocognit
 	var err error
 	// Step 1. Get list of destination tables
 	destConn, err := DestConnectionPool.Acquire(context.Background())
@@ -141,8 +140,7 @@ func RefreshMappingTable() error {
 			if t.PartitionsRegex != nil && *t.PartitionsRegex != "" {
 				re, err := regexp.Compile(*t.PartitionsRegex)
 				if err != nil {
-					log.Error("Invalid partition regex", "table", k, "regex", *t.PartitionsRegex)
-					os.Exit(1)
+					return fmt.Errorf("can't compile partition regex, table:%s, regex:%s", k, *t.PartitionsRegex)
 				}
 				t.compiledRegex = re
 			}

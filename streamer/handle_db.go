@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -41,7 +42,8 @@ func dbGetOneHandler(w http.ResponseWriter, r *http.Request) {
 		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find database", err)
 		return
 	}
-	err = ConfigDB.QueryRow(`SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.ID, &item.Name)
+	ctx := context.Background()
+	err = ConfigDB.QueryRowContext(ctx, `SELECT db_id, name FROM db WHERE db_id = ?`, id).Scan(&item.ID, &item.Name)
 	if errors.Is(err, sql.ErrNoRows) {
 		req.ReturnError(w, http.StatusNotFound, "not_found", "can't find database", err)
 		return
@@ -74,7 +76,8 @@ func dbGetManyHandler(w http.ResponseWriter, r *http.Request) {
 	m := ValuesToModifier(r.URL.Query(), dbColumns)
 	query := BuildQuery(`SELECT db_id, name FROM db`, m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
-	rows, err := ConfigDB.Query(query)
+	ctx := context.Background()
+	rows, err := ConfigDB.QueryContext(ctx, query)
 	if err != nil {
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read database schema list", err)
 		return
@@ -118,7 +121,9 @@ func dbPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Debug("Creating db", "item", item)
 
-	result, err := ConfigDB.Exec(
+	ctx := context.Background()
+	result, err := ConfigDB.ExecContext(
+		ctx,
 		`INSERT INTO db(name) VALUES (?)`, item.Name)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
@@ -139,7 +144,8 @@ func dbDeleteOneHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := ConfigDB.Exec(`DELETE FROM db WHERE db_id = ?`, id)
+	ctx := context.Background()
+	result, err := ConfigDB.ExecContext(ctx, `DELETE FROM db WHERE db_id = ?`, id)
 	if err != nil {
 		log.Error("Cannot delete database schema", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't delete database schema", err)
@@ -183,7 +189,8 @@ func dbPutOneHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Updating db", "item", item)
 	// err = app.Validate.Struct(item)
 
-	result, err := ConfigDB.Exec(`UPDATE db set name=? where db_id=?`, item.Name, id)
+	ctx := context.Background()
+	result, err := ConfigDB.ExecContext(ctx, `UPDATE db set name=? where db_id=?`, item.Name, id)
 	if err != nil {
 		req.ReturnError(w, http.StatusBadRequest, "0003", "Database error", err)
 		return

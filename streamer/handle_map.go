@@ -151,7 +151,9 @@ func mapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Now add it to config
 	log.Debug("Adding entry to tbl", "db_id", t.DBId, "name", t.Name, "target", target, "regex", regex)
-	_, err = ConfigDB.Exec(
+	ctx := context.Background()
+	_, err = ConfigDB.ExecContext(
+		ctx,
 		`INSERT INTO tbl(db_id, schema, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?, ?)`,
 		t.DBId, t.Schema, t.Name, tabletype, target, regex)
 	if err != nil {
