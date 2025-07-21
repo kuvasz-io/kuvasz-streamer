@@ -11,7 +11,7 @@ gomod:
     - GOSUMDB=sum.golang.org
     - GOPRIVATE=github.com/kuvasz-io/kuvasz-streamer
 
-  mod: readonly
+  mod: mod
   gobinary: go
 
 builds:
