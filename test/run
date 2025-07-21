@@ -66,7 +66,7 @@ cp kuvasz-streamer-gold.db kuvasz-streamer.db
 ../kuvasz-streamer --conf=./conf/kuvasz-streamer-sqlite.toml > log/kuvasz-streamer.log 2>&1 &
 sleep 5
 
-robot --exitonfailure -d log testsuite/50*
+robot --exitonfailure -d log testsuite
 cp log/log.html log/report.html ../docs/
 docker compose down
 killall kuvasz-streamer
