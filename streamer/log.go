@@ -46,14 +46,14 @@ func (l *Logger) Printf(format string, v ...any) {
 
 func parseLevel(level string) (slog.Level, error) {
 	l := strings.ToLower(level)
-	switch {
-	case l == "err" || l == "error":
+	switch l {
+	case "err", "error":
 		return slog.LevelError, nil
-	case l == "warn" || l == "warning":
+	case "warn", "warning":
 		return slog.LevelWarn, nil
-	case l == "info":
+	case "info":
 		return slog.LevelInfo, nil
-	case l == "debug":
+	case "debug":
 		return slog.LevelDebug, nil
 	}
 	return slog.LevelDebug, errors.New("can't parse log level")

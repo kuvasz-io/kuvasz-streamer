@@ -53,6 +53,7 @@ func writeDestination(log *slog.Logger, tableName string, hasSID bool, columns s
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3600)
 	defer cancel()
 	conn, err := DestConnectionPool.Acquire(ctx)
+	defer conn.Release()
 	if err != nil {
 		log.Error("cannot acquire connection to destination database", "error", err)
 		return
@@ -68,7 +69,6 @@ func writeDestination(log *slog.Logger, tableName string, hasSID bool, columns s
 		return
 	}
 	log.Debug("COPY FROM", "tag", tag)
-	conn.Release()
 }
 
 func syncTable(log *slog.Logger,
@@ -93,6 +93,14 @@ func syncTable(log *slog.Logger,
 		bytesTotal:      syncBytesTotal.WithLabelValues(db, sid, sourceTableName),
 	}
 
+	// Find map entry for source table
+	mapentry, err := MappingTable.FindByName(db, sourceTableName)
+	if err != nil {
+		log.Error("cannot match table", "database", db, "table", sourceTableName)
+		return fmt.Errorf("cannot find table: %s", sourceTableName)
+	}
+	log.Debug("Found mapping entry", "map", MappingTable, "mapentry", mapentry)
+
 	// Prepare column list
 	columns := ""
 	for c := range DestTables[destTableName].Columns {
@@ -101,6 +109,10 @@ func syncTable(log *slog.Logger,
 		}
 		if c == "sid" {
 			hasSID = true
+			continue
+		}
+		if _, ok := mapentry.SourceColumns[c]; !ok {
+			log.Debug("Target column not found in source table", "column", c, "mapentry.SourceColumns[c]", mapentry.SourceColumns[c])
 			continue
 		}
 		if columns == "" {
@@ -147,7 +159,7 @@ func syncAllTables(
 	sourceConnection *pgconn.PgConn) error {
 	log.Info("Starting full sync for all tables", "sourceTables", sourceTables)
 	for sourceTableName := range sourceTables {
-		_, destTableName, err := sourceTables.GetTable(sourceTableName)
+		destTableName, err := sourceTables.GetTable(sourceTableName)
 		if err != nil {
 			return err
 		}
@@ -166,7 +178,7 @@ func syncNewTables(
 	sourceConnection *pgconn.PgConn) error {
 	log.Info("Starting full sync for new tables", "sourceTables", sourceTables)
 	for i := range newTables {
-		_, destTableName, err := sourceTables.GetTable(newTables[i])
+		destTableName, err := sourceTables.GetTable(newTables[i])
 		if err != nil {
 			return err
 		}

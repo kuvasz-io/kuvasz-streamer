@@ -32,6 +32,7 @@ type (
 	}
 	DatabaseConfig struct {
 		URL    string `koanf:"url"`
+		Origin string `koanf:"origin"`
 		Schema string `koanf:"schema"`
 	}
 
@@ -86,6 +87,7 @@ var config = Config{
 	Logs: defaultLogsConfig,
 	Database: DatabaseConfig{
 		URL:    "",
+		Origin: "",
 		Schema: "public",
 	},
 	App: AppConfig{
@@ -168,6 +170,7 @@ func Configure(configFiles []string, envPrefix string) {
 	flags.Bool("logs.source", false, "print source line")
 	flags.String("logs.level", "debug", "logging level")
 	flags.String("database.url", "", "database connection string")
+	flags.String("database.origin", "", "replication origin")
 	flags.String("app.map", "map.yaml", "mapping file")
 	err := flags.Parse(os.Args[1:])
 	if err != nil {

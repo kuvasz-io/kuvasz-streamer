@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"reflect"
 	"time"
 
+	"github.com/google/cel-go/cel"
+	"github.com/google/cel-go/common/types"
 	"github.com/jackc/pglogrepl"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -72,7 +75,73 @@ func getValues(rel PGRelation, columns []*pglogrepl.TupleDataColumn, typeMap *pg
 			values[colName] = val
 		}
 	}
+	log.Debug("got values", "relation", rel, "values", values)
 	return values
+}
+
+func getEnv(rel PGRelation, columns []*pglogrepl.TupleDataColumn, typeMap *pgtype.Map) map[string]any {
+	values := map[string]any{}
+	for idx, col := range columns {
+		colName := rel.Columns[idx].Name
+		if colName == "type" {
+			colName = "_type"
+		}
+		switch col.DataType {
+		case 'n': // null
+			values[colName] = nil
+		case 'u': // unchanged toast
+			// This TOAST value was not changed. TOAST values are not stored in the tuple,
+			// and logical replication doesn't want to spend a disk read to fetch its value for you.
+		case 't': // text
+			if rel.Columns[idx].DataTypeOID == 2950 { // uuid
+				values[colName] = string(col.Data)
+				continue
+			}
+			if dt, ok := typeMap.TypeForOID(rel.Columns[idx].DataTypeOID); ok {
+				log.Debug("found", "data", string(col.Data), "dt", dt)
+				decodedColumn, err := dt.Codec.DecodeValue(typeMap, rel.Columns[idx].DataTypeOID, pgtype.TextFormatCode, col.Data)
+				if err != nil {
+					log.Error("cannot decode text column", "data", col.Data, "error", err)
+					continue
+				}
+				values[colName] = decodedColumn
+				continue
+			}
+			values[colName] = string(col.Data)
+		}
+	}
+	return values
+}
+
+func filter(log *slog.Logger, filterExpression cel.Program, args map[string]any) bool {
+	// no filter defined, pass
+	if filterExpression == nil {
+		return true
+	}
+	result, err := evalExpression(filterExpression, args)
+	// filter error, allow -- maybe we should take a default from config
+	if err != nil {
+		log.Error("cannot run filter, allowing", "args", args, "error", err)
+		return true
+	}
+	log.Debug("applied filter", "args", args, "result", result, "type", reflect.TypeOf(result))
+	switch t := result.(type) {
+	case types.Bool:
+		return bool(t)
+	default:
+		log.Error("filter did not return boolean, allowing")
+	}
+	return true
+}
+
+func setter(log *slog.Logger, setExpression cel.Program, args map[string]any) any {
+	result, err := evalExpression(setExpression, args)
+	if err != nil {
+		log.Error("cannot run setter", "error", err)
+		return nil
+	}
+	log.Debug("setter", "args", args, "output", result, "type", reflect.TypeOf(result))
+	return result
 }
 
 //nolint:funlen,gocognit,cyclop,gocyclo // It's OK for this to be long.
@@ -87,8 +156,6 @@ func processMessage(
 	transactionLSN *pglogrepl.LSN,
 	committedTransactionLSN *pglogrepl.LSN,
 	inStream *bool) {
-	var sourceTable *SourceTable
-	var destTable string
 	var logicalMsg pglogrepl.Message
 	var err error
 	op := operation{
@@ -97,7 +164,6 @@ func processMessage(
 		sid:      url.SID,
 		lsn:      *transactionLSN,
 	}
-	sourceTables := database.Tables
 	walData := xld.WALData
 	switch version {
 	case 1:
@@ -160,19 +226,32 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
+		entry, err := MappingTable.FindByName(database.Name, joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
-			log.Error("cannot get table", "namespace", rel.Namespace, "relationName", rel.RelationName, "error", err)
+			log.Error("cannot match table", "schema", rel.Namespace, "table", rel.RelationName)
 			return
 		}
+		values := getValues(rel, m.Tuple.Columns, typeMap)
+		env := getEnv(rel, m.Tuple.Columns, typeMap)
+		if !filter(log, entry.compiledFilter, env) {
+			return
+		}
+		if len(entry.compiledSet) != 0 { // we have set, map values to new ones
+			setValues := make(map[string]any)
+			for v, p := range entry.compiledSet {
+				setValues[v] = setter(log, p, env)
+			}
+			values = setValues
+		}
+
+		log.Debug("XLogData INSERT", "namespace", rel.Namespace, "relation", rel.RelationName, "values", values)
+		destTable := joinSchema(config.Database.Schema, entry.Target)
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
 		_, op.destTableHasSID = DestTables[destTable].Columns["sid"]
-		values := getValues(rel, m.Tuple.Columns, typeMap)
 		op.values = values
-		op.id = sourceTable.ID
-		log.Debug("XLogData INSERT", "namespace", rel.Namespace, "relation", rel.RelationName, "values", values)
-		if sourceTable.Type == TableTypeHistory {
+		op.id = entry.ID
+		if entry.Type == TableTypeHistory {
 			t0, _ := time.Parse("2006-01-02", "1900-01-01")
 			err = op.insertHistory(destTable, t0, values)
 		} else {
@@ -197,23 +276,37 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
+		entry, err := MappingTable.FindByName(database.Name, joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
-			log.Error("cannot get table", "namespace", rel.Namespace, "relationName", rel.RelationName, "error", err)
+			log.Error("cannot match table", "schema", rel.Namespace, "table", rel.RelationName)
 			return
 		}
 		op.old = m.OldTupleType
 		if op.old != 0 {
 			op.oldValues = getValues(rel, m.OldTuple.Columns, typeMap)
 		}
-		op.values = getValues(rel, m.NewTuple.Columns, typeMap)
+		values := getValues(rel, m.NewTuple.Columns, typeMap)
+		env := getEnv(rel, m.NewTuple.Columns, typeMap)
+		if !filter(log, entry.compiledFilter, env) {
+			return
+		}
+		if len(entry.compiledSet) != 0 { // we have set, map values to new ones
+			setValues := make(map[string]any)
+			for v, p := range entry.compiledSet {
+				setValues[v] = setter(log, p, env)
+			}
+			values = setValues
+		}
+		op.values = values
+
+		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
+		destTable := joinSchema(config.Database.Schema, entry.Target)
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
 		_, op.destTableHasSID = DestTables[destTable].Columns["sid"]
 		op.relation = rel
-		op.id = sourceTable.ID
-		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
-		if sourceTable.Type == TableTypeHistory {
+		op.id = entry.ID
+		if entry.Type == TableTypeHistory {
 			err = op.updateHistory(destTable, rel, op.values, op.old, op.oldValues)
 		} else {
 			op.opCode = "uc"
@@ -237,24 +330,29 @@ func processMessage(
 			log.Error("unknown relation, protocol bug", "ID", m.RelationID)
 			return
 		}
-		sourceTable, destTable, err = sourceTables.GetTable(joinSchema(rel.Namespace, rel.RelationName))
+		entry, err := MappingTable.FindByName(database.Name, joinSchema(rel.Namespace, rel.RelationName))
 		if err != nil {
-			log.Error("cannot map source table", "error", err.Error())
+			log.Error("cannot match table", "schema", rel.Namespace, "table", rel.RelationName)
 			return
 		}
-		if sourceTable.Type == TableTypeAppend {
+		if entry.Type == TableTypeAppend {
 			log.Debug("XLogDataV1 DELETE %s.%s ignored for append table type", rel.Namespace, rel.RelationName)
 			return
 		}
 		op.values = getValues(rel, m.OldTuple.Columns, typeMap)
+		env := getEnv(rel, m.OldTuple.Columns, typeMap)
+		if !filter(log, entry.compiledFilter, env) {
+			return
+		}
 		log.Debug("XLogDataV1 DELETE", "namespace", rel.Namespace, "relation", rel.RelationName, "values", op.values, "old", m.OldTupleType)
+		destTable := joinSchema(config.Database.Schema, entry.Target)
 		op.sourceTable = rel.RelationName
 		op.destTable = destTable
 		_, op.destTableHasSID = DestTables[destTable].Columns["sid"]
 		op.relation = relations[m.RelationID]
 		op.old = m.OldTupleType
-		op.id = sourceTable.ID
-		if sourceTable.Type == TableTypeHistory {
+		op.id = entry.ID
+		if entry.Type == TableTypeHistory {
 			err = op.deleteHistory(destTable, relations[m.RelationID], op.values, m.OldTupleType)
 		} else {
 			op.opCode = "dc"

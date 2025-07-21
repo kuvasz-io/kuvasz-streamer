@@ -72,7 +72,7 @@ func (op operation) updateHistory(tableName string, relation PGRelation, values 
 		query = fmt.Sprintf("%s WHERE sid=$%d AND kvsz_end='9999-01-01'", query, i)
 		queryParameters = append(queryParameters, op.sid)
 	} else {
-		query += "WHERE kvsz_end='9999-01-01'"
+		query += " WHERE kvsz_end='9999-01-01'"
 	}
 	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 

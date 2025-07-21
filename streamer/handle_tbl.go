@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -64,7 +65,9 @@ func tblGetOneHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// database mode
-	err = ConfigDB.QueryRow(
+	ctx := context.Background()
+	err = ConfigDB.QueryRowContext(
+		ctx,
 		`SELECT tbl.tbl_id, tbl.db_id, db.name as db_name, tbl.schema, tbl.name, tbl.type, tbl.target, tbl.partitions_regex 
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id
 		WHERE tbl_id = ?`,
@@ -115,7 +118,8 @@ func tblGetManyHandler(w http.ResponseWriter, r *http.Request) {
 		FROM tbl INNER JOIN DB on tbl.db_id = db.db_id`,
 		m)
 	log.Debug("running query", "query", query, "modifier", m, "values", r.URL.Query())
-	rows, err := ConfigDB.Query(query)
+	ctx := context.Background()
+	rows, err := ConfigDB.QueryContext(ctx, query)
 	if err != nil {
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't read tbl list", err)
 		return
@@ -160,7 +164,9 @@ func tblPostOneHandler(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Creating tbl", "item", item)
 	// err = app.Validate.Struct(item)
 
-	result, err := ConfigDB.Exec(
+	ctx := context.Background()
+	result, err := ConfigDB.ExecContext(
+		ctx,
 		`INSERT INTO tbl(db_id, schema, name, type, target, partitions_regex) VALUES (?, ?, ?, ?, ?, ?)`,
 		item.DBId, item.Schema, item.Name, item.Type, item.Target, item.PartitionsRegex)
 	if err != nil {
@@ -181,8 +187,8 @@ func tblDeleteOneHandler(w http.ResponseWriter, r *http.Request) {
 		req.ReturnError(w, http.StatusBadRequest, "invalid_id", "Invalid ID", err)
 		return
 	}
-
-	result, err := ConfigDB.Exec(`DELETE FROM tbl WHERE tbl_id = ?`, id)
+	ctx := context.Background()
+	result, err := ConfigDB.ExecContext(ctx, `DELETE FROM tbl WHERE tbl_id = ?`, id)
 	if err != nil {
 		log.Error("Cannot delete tbl", "id", id, "error", err)
 		req.ReturnError(w, http.StatusInternalServerError, "SYSTEM", "can't delete tbl", err)
@@ -228,7 +234,9 @@ func tblPutOneHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Debug("Updating tbl", "id", id, "item", item)
 
-	result, err := ConfigDB.Exec(
+	ctx := context.Background()
+	result, err := ConfigDB.ExecContext(
+		ctx,
 		`UPDATE tbl set schema=?, name=?, type=?, target=?, partitions_regex=? where tbl_id=?`,
 		item.Schema, item.Name, item.Type, item.Target, item.PartitionsRegex, id)
 	if err != nil {
