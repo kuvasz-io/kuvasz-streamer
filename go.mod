@@ -1,6 +1,6 @@
 module github.com/kuvasz-io/kuvasz-streamer
 
-go 1.24.5
+go 1.24.4
 
 require (
 	github.com/deckarep/golang-set/v2 v2.8.0
