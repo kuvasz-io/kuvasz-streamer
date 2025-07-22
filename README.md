@@ -52,7 +52,7 @@ Full PostgreSQL support is guaranteed with an extensive test suite:
 
 ### Filerting and transformation
 
-Common Expression Language (cel.dev)[https://cel.dev] is supported to filter rows to replicate and to map and transform attributes between source and destination tables.
+Common Expression Language [cel.dev](https://cel.dev) is supported to filter rows to replicate and to map and transform attributes between source and destination tables.
 
 ### API and web interface
 
