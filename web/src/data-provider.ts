@@ -22,7 +22,7 @@ const jwtClient = (url: string, options : any) => {
   }
 };
 
-const apiUrl:string = 'http://turing:8000/api'
+const apiUrl:string = 'http://127.0.0.1:8000/api'
 const httpClient = jwtClient
 const countHeader: string = 'X-Total-Count'
 
