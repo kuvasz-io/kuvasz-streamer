@@ -1,0 +1,18 @@
+# Once the PR was merged we don't need to run all the checks again
+# We can simply build and push the image here
+steps:
+  - name: gcr.io/cloud-builders/docker
+    id: docker build and push
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -eux
+        if [ "$TAG_NAME" != "" ]; then
+            docker build -f Dockerfile-production -t us-east4-docker.pkg.dev/alpacahq/platform/kuvasz-streamer:$TAG_NAME .
+            docker push us-east4-docker.pkg.dev/alpacahq/platform/kuvasz-streamer:$TAG_NAME
+        fi
+    env: ['DOCKER_BUILDKIT=1']
+
+options:
+  machineType: N1_HIGHCPU_8
