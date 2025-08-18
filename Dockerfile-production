@@ -11,15 +11,10 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-
 RUN make build
 
 FROM scratch
 
 LABEL maintainer="kuvasz.io  <info@kuvasz.io>"
-
-COPY ./kuvasz-streamer  /
-
 COPY --from=builder /src/kuvasz-streamer ./
-
 ENTRYPOINT ["/kuvasz-streamer"]
