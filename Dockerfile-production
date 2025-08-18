@@ -1,0 +1,25 @@
+ARG GO_VERSION=1.24.4
+ARG ALPINE_VERSION=3.22
+
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+RUN apk update && \
+    apk --no-cache add \
+      make \
+      git
+
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+
+RUN GOOS=linux GOARCH=amd64  make build
+
+FROM scratch
+
+LABEL maintainer="kuvasz.io  <info@kuvasz.io>"
+
+COPY ./kuvasz-streamer  /
+
+COPY --from=builder /src/kuvasz-streamer ./
+
+ENTRYPOINT ["/kuvasz-streamer"]
