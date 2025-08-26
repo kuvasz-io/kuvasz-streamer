@@ -2,7 +2,7 @@ import * as React from 'react';
 import { AppBar, Button, TitlePortal, useDataProvider, useRefresh } from 'react-admin';
 import { Box, useMediaQuery, Theme } from '@mui/material';
 
-import { useMutation } from 'react-query';
+import { useMutation } from '@tanstack/react-query';
 
 import Logo from "./logo";
 

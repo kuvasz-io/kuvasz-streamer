@@ -24,17 +24,19 @@ func pluginArguments(pgVersion int, slotName string) (int, []string) {
 	case 12, 13:
 		arg = append(arg, "proto_version '1'")
 		protocolVersion = 1
-	case 14:
-		arg = append(arg, "proto_version '2'")
 	default:
 		arg = append(arg, "proto_version '2'")
 	}
 	arg = append(arg, fmt.Sprintf("publication_names '%s'", slotName))
-	if pgVersion > 13 {
+	if pgVersion >= 14 {
 		arg = append(arg, "binary 'false'")
 		arg = append(arg, "messages 'true'")
 		arg = append(arg, "streaming 'true'")
 	}
+	if pgVersion >= 16 {
+		arg = append(arg, "origin 'none'")
+	}
+	log.Debug("calculate args", "arg", arg)
 	return protocolVersion, arg
 }
 
@@ -93,8 +95,8 @@ func pgVersion(log *slog.Logger, conn *pgx.Conn) (int, error) {
 	if version < 12 {
 		return version, fmt.Errorf("unsupported postgres version=%d, minversion=12", version)
 	}
-	if version > 16 {
-		log.Warn("New postgres version. may not be supported", "version", version, "maxversion", 16)
+	if version > 17 {
+		log.Warn("New postgres version. may not be supported", "version", version, "maxversion", 17)
 	}
 	return version, nil
 }
@@ -122,7 +124,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 		return fmt.Errorf("cannot parse url=%s, error=%w", databaseURL, err)
 	}
 	parsedConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
-	dbName := parsedConfig.Database
+	// dbName := parsedConfig.Database
 	log.Info("Connecting", "databaseURL", databaseURL)
 	ctx := context.Background()
 	conn, err := pgx.ConnectConfig(ctx, parsedConfig)
@@ -163,7 +165,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	}
 
 	// Check existing publication and create if needed, drop replication slot if required
-	slotName := "kuvasz_" + dbName
+	slotName := "kuvasz_" + database.Name + "_" + url.SID
 	slotName = strings.ReplaceAll(slotName, "-", "_")
 	var publication, slot int
 	err = conn.QueryRow(context.Background(), `with publication as (
@@ -185,7 +187,7 @@ func ReplicateDatabase(rootContext context.Context, database SourceDatabase, url
 	var newTables []string
 	//nolint:nestif // this cannot be really simplified
 	if publication == 1 && slot == 1 {
-		newTables, err = SyncPublications(log, conn, database)
+		newTables, err = SyncPublications(log, conn, database, url.SID)
 		if err != nil {
 			return fmt.Errorf("cannot sync publications: %w", err)
 		}

@@ -225,7 +225,7 @@ func ObservabilityMiddleware(next http.Handler) http.Handler {
 			"method", r.Method,
 			"uri", r.RequestURI,
 			"remote_addr", r.RemoteAddr,
-			"headers", record.ResponseWriter.Header(),
+			"headers", record.Header(),
 			"status", record.status,
 			"request_size", r.ContentLength,
 			"response_size", record.responseBytes,

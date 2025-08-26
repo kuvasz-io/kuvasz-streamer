@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -149,26 +151,70 @@ func GetTables(log *slog.Logger, database *pgx.Conn, schemaName string) (PGTable
 	return pgTables, nil
 }
 
-func SetupDestination() error {
-	var err error
+func randomString() string {
+	const charset = "abcdefghijklmnopqrstuvwxyz"
+	b := make([]byte, 8)
+	for i := range b {
+		b[i] = charset[rand.IntN(len(charset))] //nolint:gosec // this is just for non collision of files
+	}
+	return string(b)
+}
 
-	// Connect to target database if not already connected
-	DestConnectionPool, err = pgxpool.New(context.Background(), config.Database.URL)
+func SetupDestination() error {
+	// Create connection pool
+	pgconfig, err := pgxpool.ParseConfig(config.Database.URL)
+	if err != nil {
+		return fmt.Errorf("failed to parse database url:%s, err:%w", config.Database.URL, err)
+	}
+
+	// Create origin and setup hook to setup session if supported and required
+	if config.Database.Origin != "" {
+		origin := "kuvasz_" + config.Database.Origin + "_" + randomString()
+		log.Info("Using Origin", "origin", origin)
+
+		pgconfig.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+			var oid pgtype.Uint32
+			log.Info("Creating Origin", "origin", "kuvasz_"+origin)
+			err = conn.QueryRow(ctx, "select pg_replication_origin_create('"+origin+"')").Scan(&oid)
+			if err != nil {
+				return fmt.Errorf("cannot create origin: %s, error: %w", origin, err)
+			}
+			_, err := conn.Exec(ctx, "select pg_replication_origin_session_setup('"+origin+"')")
+			if err != nil {
+				return fmt.Errorf("cannot create origin: %s, error: %w", origin, err)
+			}
+			return nil
+		}
+		pgconfig.BeforeClose = func(conn *pgx.Conn) {
+			log.Info("Dropping Origin", "origin", "kuvasz_"+origin)
+			_, err := conn.Exec(context.Background(), "select pg_replication_origin_session_reset()")
+			if err != nil {
+				log.Error("cannot reset session", "error", err)
+			}
+			_, err = conn.Exec(context.Background(), "select pg_replication_origin_session_drop('"+origin+"')")
+			if err != nil {
+				log.Error("cannot drop origin", "origin", origin, "error", err)
+			}
+		}
+	}
+	DestConnectionPool, err = pgxpool.NewWithConfig(context.Background(), pgconfig)
 	if err != nil {
 		return fmt.Errorf("can't connect to target database, url=%s, error=%w", config.Database.URL, err)
 	}
 	log.Info("Connected to target database", "url", config.Database.URL)
 
-	// Get destination metadata
-	log.Info("Getting destination table metadata")
+	// Get connection
 	conn, err := DestConnectionPool.Acquire(context.Background())
 	if err != nil {
-		return fmt.Errorf("can't get destination table metadata: error=%w", err)
+		return fmt.Errorf("can't acquire connection to fetch metadata: error=%w", err)
 	}
 	defer conn.Release()
+
+	// Get destination metadata
+	log.Info("Getting destination table metadata")
 	DestTables, err = GetTables(log, conn.Conn(), config.Database.Schema)
 	if err != nil {
-		return fmt.Errorf("can't get destination table metadata, error=%w", err)
+		return fmt.Errorf("can't get destination table metadata during initial setup, error=%w", err)
 	}
 	return nil
 }

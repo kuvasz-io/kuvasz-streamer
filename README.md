@@ -50,6 +50,10 @@ Full PostgreSQL support is guaranteed with an extensive test suite:
   - Source tables can be in any database and in any schema
   - Destination tables are in a single database and a single schema
 
+### Filerting and transformation
+
+Common Expression Language [cel.dev](https://cel.dev) is supported to filter rows to replicate and to map and transform attributes between source and destination tables.
+
 ### API and web interface
 
 The service provides an optional API and a web interface to easily manage publications and mapping.

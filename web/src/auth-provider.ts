@@ -1,5 +1,5 @@
 import inMemoryJWT from './in-memory-jwt';
-const baseURL = 'http://turing:8000'
+const baseURL = 'http://127.0.0.1:8000'
 
 export const authProvider = {
     login: ({username, password}: any) => {

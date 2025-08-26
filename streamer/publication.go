@@ -32,7 +32,7 @@ func findBaseTables(db string) []string {
 }
 
 func makePublication(database SourceDatabase) string {
-	log.Debug("Creating publication", "database", database, "MappingTable", MappingTable)
+	log.Debug("Creating publication - find tables", "database", database, "MappingTable", MappingTable)
 	if len(database.Tables) == 0 {
 		return ""
 	}
@@ -43,20 +43,23 @@ func makePublication(database SourceDatabase) string {
 	return " for table " + strings.Join(p, ", ")
 }
 
-func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]string, error) {
+func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase, sid string) ([]string, error) {
 	var newTables []string
 	ctx := context.Background()
 	publishedTables := mapset.NewSet[string]()
 
-	log.Debug("SyncPublications", "db", db)
+	pubName := "kuvasz_" + db.Name + "_" + sid
+	pubName = strings.ReplaceAll(pubName, "-", "_")
+
+	log.Debug("SyncPublications", "db", db, "publication", pubName)
 	log.Debug("SyncPublications, step 1: Find published tables")
 	// Fetch list of published tables
 	rows, err := conn.Query(
 		ctx,
-		"SELECT schemaname,tablename FROM pg_publication_tables WHERE pubname = 'kuvasz_'||$1",
-		db.Name)
+		"SELECT schemaname,tablename FROM pg_publication_tables WHERE pubname = $1",
+		pubName)
 	if err != nil {
-		return newTables, fmt.Errorf("cannot query publication tables, error: %w", err)
+		return newTables, fmt.Errorf("cannot query publication tables, pubname=%s, error: %w", pubName, err)
 	}
 	defer rows.Close()
 	var schema, table string
@@ -66,7 +69,7 @@ func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]st
 			return newTables, fmt.Errorf("cannot scan table name, error: %w", err)
 		}
 		fullName := joinSchema(schema, table)
-		log.Debug("Found published table", "database", db.Name, "schema", schema, "table", table)
+		log.Debug("Found published table", "pubName", pubName, "database", db.Name, "schema", schema, "table", table)
 		publishedTables.Add(fullName)
 		// remove from publication if not in MappingTable, checking for partitions
 	}
@@ -75,10 +78,10 @@ func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]st
 	log.Debug("SyncPublications, step 2: remove unconfigured tables")
 	for _, n := range publishedTables.ToSlice() {
 		if db.Tables.Find(n) == "" {
-			log.Debug("Removing table from publication", "database", db.Name, "schema", schema, "table", table)
-			_, err = conn.Exec(ctx, "ALTER PUBLICATION kuvasz_"+db.Name+" DROP TABLE "+n)
+			log.Debug("Removing table from publication", "pubName", pubName, "database", db.Name, "schema", schema, "table", table)
+			_, err = conn.Exec(ctx, "ALTER PUBLICATION "+pubName+" DROP TABLE "+n)
 			if err != nil {
-				return newTables, fmt.Errorf("cannot alter publication, error: %w", err)
+				return newTables, fmt.Errorf("cannot alter publication, pubName=%s, error: %w", pubName, err)
 			}
 		}
 	}
@@ -89,8 +92,8 @@ func SyncPublications(log *slog.Logger, conn *pgx.Conn, db SourceDatabase) ([]st
 	log.Debug("Got base tables, scanning for missing ones", "basetables", p)
 	for i := range p {
 		if !publishedTables.Contains(p[i]) {
-			log.Debug("Adding table to publication", "database", db.Name, "table", p[i])
-			_, err = conn.Exec(ctx, "ALTER PUBLICATION kuvasz_"+db.Name+" ADD TABLE "+p[i])
+			log.Debug("Adding table to publication", "pubName", pubName, "database", db.Name, "table", p[i])
+			_, err = conn.Exec(ctx, "ALTER PUBLICATION "+pubName+" ADD TABLE "+p[i])
 			if err != nil {
 				return newTables, fmt.Errorf("cannot alter publication, error: %w", err)
 			}
