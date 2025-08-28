@@ -35,7 +35,7 @@ func (op operation) buildSetList(tableName string, args []arg, values map[string
 	return args, nil
 }
 
-func (op operation) buildWhere(
+func buildWhere(
 	tableName string,
 	relation PGRelation,
 	values map[string]any,
@@ -99,6 +99,65 @@ func (op operation) buildWhere(
 	return query, queryParameters
 }
 
+func buildTranslatedWhere(
+	tableName string,
+	entry MappingEntry,
+	values map[string]any,
+	oldValues map[string]any,
+	old uint8,
+	query string,
+	queryParameters []any) (string, []any) {
+	var value any
+	var ok bool
+
+	j := len(queryParameters) + 1
+	log.Debug("buildTranslatedWhere", "oldValues", oldValues, "old", old, "values", values, "entry", entry)
+	switch old {
+	case 'K', 0:
+		for columnName, column := range DestTables[tableName].Columns {
+			if !column.PrimaryKey {
+				log.Debug("Skip non-primary key component", "columnName", columnName, "column", column)
+				continue
+			}
+			if old == 'K' {
+				value, ok = oldValues[columnName]
+			} else {
+				value, ok = values[columnName]
+			}
+			if !ok {
+				log.Error("Bug: Primary key component not received", "columnName", columnName)
+				continue
+			}
+			if value == nil {
+				log.Error("Bug: NULL received in primary component", "columnName", columnName)
+				continue
+			}
+			query = fmt.Sprintf("%s AND %s=$%d", query, columnName, j)
+			queryParameters = append(queryParameters, value)
+			j++
+		}
+	case 'O':
+		// no primary key is defined, range over all incoming values skipping non-existing columns
+		for columnName := range DestTables[tableName].Columns {
+			value, ok = oldValues[columnName]
+			if !ok {
+				log.Error("Bug: row component not calculated", "columnName", columnName)
+				continue
+			}
+			if value == nil {
+				query = fmt.Sprintf("%s AND %s IS NULL", query, columnName)
+			} else {
+				query = fmt.Sprintf("%s AND %s=$%d", query, columnName, j)
+				queryParameters = append(queryParameters, value)
+				j++
+			}
+		}
+	default:
+		log.Error("Invalid old tuple indicator", "old", old)
+	}
+	return query, queryParameters
+}
+
 func (op operation) insertClone(tx pgx.Tx) error {
 	var query string
 	var err error
@@ -150,9 +209,10 @@ func (op operation) insertClone(tx pgx.Tx) error {
 }
 
 // Cases
-// 1. PK exists and is not updated => old = 0, oldValues=nil ==> where PK=PK and sid=SID.
-// 2. PK exists and is updated => old=K, oldValues=oldPK ==> where PK=oldPK and sid=SID.
-// 3. PK does not exist, replica full => old=O, oldValues=alloldValues ==> where allfields=alloldValues.
+//  1. PK exists and is not updated => old = 0, oldValues=nil ==> where PK=PK and sid=SID (if it exists)
+//     If there is a translation mechanism via Set keyword, build a WHERE clause with PK=translation of new values
+//  2. PK exists and is updated => old=K, oldValues=oldPK ==> where PK=oldPK and sid=SID.
+//  3. PK does not exist, replica full => old=O, oldValues=alloldValues ==> WHERE allfields=alloldValues.
 func (op operation) updateClone(tx pgx.Tx) error {
 	var i int
 	args := make([]arg, 0)
@@ -188,7 +248,12 @@ func (op operation) updateClone(tx pgx.Tx) error {
 	}
 
 	// add primary key
-	query, queryParameters = op.buildWhere(op.destTable, op.relation, op.values, op.oldValues, op.old, query, queryParameters)
+	entry := MappingTable.FindByID(op.id)
+	if len(entry.compiledSet) == 0 { // straight-through without translation
+		query, queryParameters = buildWhere(op.destTable, op.relation, op.values, op.oldValues, op.old, query, queryParameters)
+	} else {
+		query, queryParameters = buildTranslatedWhere(op.destTable, entry, op.values, op.oldValues, op.old, query, queryParameters)
+	}
 
 	// Run query
 	log.Debug("update", "query", query, "queryParameters", queryParameters)
@@ -222,7 +287,13 @@ func (op operation) deleteClone(tx pgx.Tx) error {
 		query = fmt.Sprintf("DELETE FROM %s WHERE true ", op.destTable)
 	}
 
-	query, queryParameters = op.buildWhere(op.destTable, op.relation, nil, op.values, op.old, query, queryParameters)
+	entry := MappingTable.FindByID(op.id)
+	if len(entry.compiledSet) == 0 { // straight-through without translation
+		query, queryParameters = buildWhere(op.destTable, op.relation, nil, op.values, op.old, query, queryParameters)
+	} else {
+		query, queryParameters = buildTranslatedWhere(op.destTable, entry, nil, op.values, op.old, query, queryParameters)
+	}
+
 	// Run query
 	log.Debug("delete", "query", query, "parameters", queryParameters)
 	rows, err := tx.Exec(context.Background(), query, queryParameters...)

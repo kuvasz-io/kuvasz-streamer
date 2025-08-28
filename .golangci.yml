@@ -36,7 +36,6 @@ linters:
     - inamedparam
     - ineffassign
     - interfacebloat
-    - ireturn
     - lll
     - loggercheck
     - makezero

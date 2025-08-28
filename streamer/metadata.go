@@ -191,7 +191,7 @@ func SetupDestination() error {
 			if err != nil {
 				log.Error("cannot reset session", "error", err)
 			}
-			_, err = conn.Exec(context.Background(), "select pg_replication_origin_session_drop('"+origin+"')")
+			_, err = conn.Exec(context.Background(), "select pg_replication_origin_drop('"+origin+"')")
 			if err != nil {
 				log.Error("cannot drop origin", "origin", origin, "error", err)
 			}

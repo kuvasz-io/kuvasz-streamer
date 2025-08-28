@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/common/types"
+	"github.com/google/cel-go/common/types/ref"
 	"github.com/google/cel-go/ext"
 )
 
@@ -32,11 +33,35 @@ func ConvertPGColumnsToEnv(c map[string]PGColumn) map[string]any {
 			goVal = float64(0)
 		case "bytea":
 			goVal = []byte{}
+		case "timestamptz":
+			goVal = time.Time{}
+		default:
+			goVal = string("")
 		}
 		env[key] = goVal
 	}
 	log.Debug("Converted pgcolumns to env", "PGColumns", c, "env", env)
 	return env
+}
+
+func byteSubstring(slice []byte, start, end int64) ([]byte, error) {
+	if start > end {
+		return nil, fmt.Errorf("invalid substring range. start: %d, end: %d", start, end)
+	}
+	if int(start) < 0 || int(start) > len(slice) {
+		return nil, fmt.Errorf("index out of range: %d", start)
+	}
+	if int(end) < 0 || int(end) > len(slice) {
+		return nil, fmt.Errorf("index out of range: %d", end)
+	}
+	return slice[start:end], nil
+}
+
+func bytesOrError(s []byte, err error) ref.Val {
+	if err != nil {
+		return types.NewErrFromString(err.Error())
+	}
+	return types.Bytes(s)
 }
 
 func prepareExpression(expression string, variables map[string]any) (cel.Program, error) { //nolint:ireturn // we have no choice here
@@ -52,7 +77,19 @@ func prepareExpression(expression string, variables map[string]any) (cel.Program
 		ext.Strings(),
 		ext.TwoVarComprehensions(),
 	}
+	envOpts = append(envOpts, cel.Function("sliceBytes",
+		cel.MemberOverload("bytes_slice_bytes_int_int", []*cel.Type{cel.BytesType, cel.IntType, cel.IntType}, cel.BytesType,
+			cel.FunctionBinding(func(args ...ref.Val) ref.Val {
+				s := args[0].(types.Bytes)   //nolint:errcheck // type checking by cel
+				start := args[1].(types.Int) //nolint:errcheck // type checking by cel
+				end := args[2].(types.Int)   //nolint:errcheck // type checking by cel
+				return bytesOrError(byteSubstring(s, int64(start), int64(end)))
+			}))))
+
 	log.Debug("prepareExpression", "expression", expression, "variables", variables)
+
+	envOpts = append(envOpts, cel.Variable("now", cel.TimestampType))
+
 	for key, value := range variables {
 		// Infer the CEL type from the Go type of the value.
 		// cel-go's common.Types provides helpers for common Go types.
@@ -109,6 +146,7 @@ func prepareExpression(expression string, variables map[string]any) (cel.Program
 }
 
 func evalExpression(program cel.Program, variables map[string]any) (any, error) {
+	variables["now"] = types.Timestamp{Time: time.Now()}
 	output, _, err := program.Eval(variables)
 	// change variable types CEL -> Go as CEL type causes stramge formatting of timestamps.
 	// others may be needed

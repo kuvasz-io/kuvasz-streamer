@@ -281,23 +281,33 @@ func processMessage(
 			log.Error("cannot match table", "schema", rel.Namespace, "table", rel.RelationName)
 			return
 		}
-		op.old = m.OldTupleType
-		if op.old != 0 {
-			op.oldValues = getValues(rel, m.OldTuple.Columns, typeMap)
-		}
-		values := getValues(rel, m.NewTuple.Columns, typeMap)
+
+		op.values = getValues(rel, m.NewTuple.Columns, typeMap)
 		env := getEnv(rel, m.NewTuple.Columns, typeMap)
 		if !filter(log, entry.compiledFilter, env) {
 			return
 		}
+
+		op.old = m.OldTupleType
+		if op.old != 0 {
+			op.oldValues = getValues(rel, m.OldTuple.Columns, typeMap)
+		}
+
 		if len(entry.compiledSet) != 0 { // we have set, map values to new ones
 			setValues := make(map[string]any)
 			for v, p := range entry.compiledSet {
 				setValues[v] = setter(log, p, env)
 			}
-			values = setValues
+			op.values = setValues
+			if op.old != 0 {
+				oldEnv := getEnv(rel, m.OldTuple.Columns, typeMap)
+				oldValues := make(map[string]any)
+				for v, p := range entry.compiledSet {
+					oldValues[v] = setter(log, p, oldEnv)
+				}
+				op.oldValues = oldValues
+			}
 		}
-		op.values = values
 
 		log.Debug("XLogData UPDATE", "namespace", rel.Namespace, "relation", rel.RelationName, "oldValues", op.oldValues, "values", op.values)
 		destTable := joinSchema(config.Database.Schema, entry.Target)
@@ -344,6 +354,15 @@ func processMessage(
 		if !filter(log, entry.compiledFilter, env) {
 			return
 		}
+
+		if len(entry.compiledSet) != 0 { // we have set, map values to new ones
+			setValues := make(map[string]any)
+			for v, p := range entry.compiledSet {
+				setValues[v] = setter(log, p, env)
+			}
+			op.values = setValues
+		}
+
 		log.Debug("XLogDataV1 DELETE", "namespace", rel.Namespace, "relation", rel.RelationName, "values", op.values, "old", m.OldTupleType)
 		destTable := joinSchema(config.Database.Schema, entry.Target)
 		op.sourceTable = rel.RelationName

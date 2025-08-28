@@ -74,7 +74,7 @@ func (op operation) updateHistory(tableName string, relation PGRelation, values 
 	} else {
 		query += " WHERE kvsz_end='9999-01-01'"
 	}
-	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
+	query, queryParameters = buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 
 	// Run query
 	log.Debug("update", "query", query, "args", queryParameters)
@@ -103,7 +103,7 @@ func (op operation) deleteHistory(tableName string, relation PGRelation, values 
 	}
 	queryParameters = append(queryParameters, t0)
 
-	query, queryParameters = op.buildWhere(tableName, relation, nil, values, old, query, queryParameters)
+	query, queryParameters = buildWhere(tableName, relation, nil, values, old, query, queryParameters)
 	// Run query
 	log.Debug("delete",
 		"query", query,

@@ -8,7 +8,9 @@ import (
 	"net/http"
 	_ "net/http/pprof" //nolint:gosec // suppress linter error
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/mattn/go-sqlite3"
@@ -88,7 +90,7 @@ func main() {
 		ReadMap()
 		dbmap.CompileRegexes()
 		// Create root context allowing cancellation of all goroutines
-		rootContext, rootCancel := context.WithCancel(context.Background())
+		rootContext, rootCancel := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
 
 		// Loop through config and replicate databases
 		log.Info("Start processing source databases")
@@ -100,13 +102,25 @@ func main() {
 			}
 		}
 		SetStatus(StatusActive)
-		<-RootChannel
-		rootCancel()
+		restart := false
+		select {
+		case <-RootChannel:
+			rootCancel()
+			log.Info("Restarting process")
+			restart = true
+		case <-rootContext.Done():
+		}
 		SetStatus(StatusStopping)
 		// wait until all workers exit
 		log.Debug("Waiting for workers to exit")
 		wg.Wait()
 		CloseDestination()
 		CloseConfigDB()
+		if restart {
+			log.Debug("Restarting..")
+		} else {
+			log.Debug("Stopping..")
+			os.Exit(0)
+		}
 	}
 }
