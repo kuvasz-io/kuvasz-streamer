@@ -79,14 +79,14 @@ sudo snap install node --channel=20/stable --classic
 
 ### Install Go and tools
 
-`kuvasz-streamer` requires Go 1.23 or higher. Install Go and GoReleaser using snaps, then install `staticcheck` and `govulncheck` from source and `golangci-lint` binary from its repository. Finally, add the local Go bin directory to the PATH.
+`kuvasz-streamer` requires Go 1.24 or higher. Install Go and GoReleaser using snaps, then install `staticcheck` and `govulncheck` from source and `golangci-lint` binary from its repository. Finally, add the local Go bin directory to the PATH.
 
 ```bash
-sudo snap install go --channel=1.23/stable --classic
+sudo snap install go --channel=1.24/stable --classic
 sudo snap install goreleaser --classic
 go install honnef.co/go/tools/cmd/staticcheck@latest
 go install golang.org/x/vuln/cmd/govulncheck@latest
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.61.0
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.4.0
 export PATH=${PATH}:$(go env GOPATH)/bin
 ```
 
@@ -155,7 +155,7 @@ sudo apt install python3-pip
 Then use `pip` to install Robot Framework and its dependencies
 
 ```bash
-pip3 install psycopg2-binary robotframework robotframework-databaselibrary
+pip3 install psycopg2-binary robotframework robotframework-databaselibrary RESTinstance
 ```
 
 ### Run the test suite
