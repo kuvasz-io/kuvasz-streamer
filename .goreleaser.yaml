@@ -4,16 +4,6 @@ before:
   hooks:
     - make web
 
-gomod:
-  proxy: true
-  env:
-    - GOPROXY=https://proxy.golang.org,direct
-    - GOSUMDB=sum.golang.org
-    - GOPRIVATE=github.com/kuvasz-io/kuvasz-streamer
-
-  mod: mod
-  gobinary: go
-
 builds:
   - env:
       - CGO_ENABLED=0
@@ -21,7 +11,6 @@ builds:
       - linux
       - windows
       - darwin
-      - freebsd
     goarch:
       - amd64
       - arm64
