@@ -341,14 +341,6 @@ func APIServer(log *slog.Logger) {
 	router.HandleFunc("/api/tbl/{id}", tblDeleteOneHandler).Methods("DELETE")
 	router.HandleFunc("/api/tbl/{id}", tblPutOneHandler).Methods("PUT")
 
-	router.HandleFunc("/login", loginHandler).Methods("POST")
-	router.HandleFunc("/refresh-token", refreshTokenHandler).Methods("GET")
-	router.HandleFunc("/logout", logoutHandler).Methods("POST")
-
-	// Add web admin and route by default
-	router.Path("/").Handler(http.RedirectHandler("/admin/", http.StatusSeeOther))
-	router.PathPrefix("/admin").Handler(http.FileServer(http.FS(webDist)))
-
 	// Start the engine
 	log.Debug("Starting api server", "config", config.Server)
 	srv := &http.Server{
