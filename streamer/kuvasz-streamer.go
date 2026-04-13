@@ -43,9 +43,6 @@ var (
 
 	//go:embed migrations/*.sql
 	embedMigrations embed.FS
-
-	//go:embed admin
-	webDist embed.FS
 )
 
 func SetStatus(s string) {

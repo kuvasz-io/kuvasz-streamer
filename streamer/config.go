@@ -37,9 +37,7 @@ type (
 	}
 
 	AuthConfig struct {
-		AdminPassword string `koanf:"admin_password"`
-		JWTKey        string `koanf:"jwt_key"`
-		TTL           int    `koanf:"ttl"`
+		JWTKey string `koanf:"jwt_key"`
 	}
 	AppConfig struct {
 		MapFile       string     `koanf:"map_file"`
@@ -98,11 +96,6 @@ var config = Config{
 		DefaultSchema: "public",
 		SyncRate:      1_000_000_000,
 		SyncBurst:     1_000,
-	},
-	Auth: AuthConfig{
-		AdminPassword: "$2b$05$KlJx0xWATjLt84bXrg6uZe/zU4TH3TvbPDLf6tOrzMUPEyN7AoEie",
-		JWTKey:        "Y3OYHx7Y1KsRJPzJKqHGWfEaHsPbmwwSpPrXcND95Pw=",
-		TTL:           300,
 	},
 	Cors: CORSConfig{
 		AllowedOrigins:   []string{"*"},

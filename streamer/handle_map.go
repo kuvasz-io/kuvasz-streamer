@@ -71,7 +71,7 @@ func mapCreateTableHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	q := "CREATE TABLE " + t.Name + "(sid text"
 	for k, v := range t.SourceColumns {
-		q += ", " + k + " " + v.ColumnType
+		q += ", " + k + " " + v.ColumnType //nolint:perfsprint // puting in slice complicates things
 	}
 	q += ");"
 	_, err = DestConnectionPool.Exec(context.Background(), q)
@@ -138,7 +138,7 @@ func mapCloneTableHandler(w http.ResponseWriter, r *http.Request) {
 			} else {
 				q += ", "
 			}
-			q += k + " " + v.ColumnType
+			q += k + " " + v.ColumnType //nolint:perfsprint // simpler like this
 		}
 		q += ");"
 		log.Debug("Creating table", "name", t.Name, "columns", t.SourceColumns, "q", q)
