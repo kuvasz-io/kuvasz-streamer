@@ -140,6 +140,7 @@ func GetCommittedLSN(database, sid string, sourceCommittedLSN pglogrepl.LSN) pgl
 
 	// step 1 find lowest dirty LSN
 	for i := range Workers {
+		Workers[i].s.Lock()
 		if status, ok := Workers[i].s.m[dbsid]; ok {
 			if status.WrittenLSN > status.CommittedLSN { // worker has written requests but not committed
 				if status.WrittenLSN < lowestDirtyLSN || lowestDirtyLSN == 0 {
@@ -147,10 +148,12 @@ func GetCommittedLSN(database, sid string, sourceCommittedLSN pglogrepl.LSN) pgl
 				}
 			}
 		}
+		Workers[i].s.Unlock()
 	}
 	// log.Debug("Found Lowest dirty LSN", "lowestDirtyLSN", lowestDirtyLSN)
 	// step 2 find highest committed transaction in destination already committed in the source
 	for i := range Workers {
+		Workers[i].s.Lock()
 		// log.Debug("Worker info", "i", i, "m", Workers[i].s.m[dbsid])
 		if status, ok := Workers[i].s.m[dbsid]; ok {
 			if (status.CommittedLSN < lowestDirtyLSN || lowestDirtyLSN == 0) &&
@@ -159,6 +162,7 @@ func GetCommittedLSN(database, sid string, sourceCommittedLSN pglogrepl.LSN) pgl
 				highestCommittedLSN = status.CommittedLSN
 			}
 		}
+		Workers[i].s.Unlock()
 	}
 	// log.Debug("Found highest committed LSN", "highestCommittedLSN", highestCommittedLSN, "sourceCommittedLSN", sourceCommittedLSN)
 	return highestCommittedLSN
