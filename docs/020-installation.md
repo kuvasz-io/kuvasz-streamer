@@ -69,14 +69,6 @@ Minimal requirements are `Make` and `git`, but you will also need PostgreSQL cli
 sudo apt install build-essential git postgresql postgresql-contrib
 ```
 
-### Install web tools
-
-Install `node` and `yarn` to build the web administration interface.
-
-```bash
-sudo snap install node --channel=20/stable --classic
-```
-
 ### Install Go and tools
 
 `kuvasz-streamer` requires Go 1.23 or higher. Install Go and GoReleaser using snaps, then install `staticcheck` and `govulncheck` from source and `golangci-lint` binary from its repository. Finally, add the local Go bin directory to the PATH.

@@ -11,10 +11,7 @@ CONTAINER-LATEST   := ${REGISTRY}/${BINARY}:${CI_COMMIT_REF_NAME}
 LDFLAGS            += -X ${BINARY}.Version=${VERSION}
 LDFLAGS            += -X ${BINARY}.Build=${BUILD}
 
-all: web check build vulncheck
-
-web:
-	cd web; yarn install; yarn build --outDir ../streamer/admin
+all: check build vulncheck
 
 check:
 	staticcheck -checks=all ./...
@@ -48,7 +45,7 @@ docs:
 	cp -r docs/_site/* /var/www/caddy/streamer
 
 clean:
-	rm -rf ${BINARY} streamer/admin web/dist dist
+	rm -rf ${BINARY} dist
 
-.PHONY: web check build vulncheck release rpmrepo aptrepo test docs clean
+.PHONY: check build vulncheck release rpmrepo aptrepo test docs clean
 

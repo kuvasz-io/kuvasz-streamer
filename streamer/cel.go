@@ -40,7 +40,7 @@ func ConvertPGColumnsToEnv(c map[string]PGColumn) map[string]any {
 }
 
 func prepareExpression(expression string, variables map[string]any) (cel.Program, error) { //nolint:ireturn // we have no choice here
-	envOpts := []cel.EnvOption{
+	envOpts := []cel.EnvOption{ //nolint:prealloc // no performance issue here
 		cel.OptionalTypes(),
 		cel.HomogeneousAggregateLiterals(),
 		ext.Bindings(),

@@ -1,9 +1,5 @@
 version: 2
 
-before:
-  hooks:
-    - make web
-
 gomod:
   proxy: true
   env:

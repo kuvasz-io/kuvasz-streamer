@@ -50,9 +50,9 @@ Full PostgreSQL support is guaranteed with an extensive test suite:
   - Source tables can be in any database and in any schema
   - Destination tables are in a single database and a single schema
 
-### API and web interface
+### API interface
 
-The service provides an optional API and a web interface to easily manage publications and mapping.
+The service provides an optional API to easily manage publications and mapping.
 
 ## Use cases
 

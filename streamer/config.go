@@ -99,7 +99,7 @@ var config = Config{
 		SyncRate:      1_000_000_000,
 		SyncBurst:     1_000,
 	},
-	Auth: AuthConfig{
+	Auth: AuthConfig{ //nolint:gosec // sample creds
 		AdminPassword: "$2b$05$KlJx0xWATjLt84bXrg6uZe/zU4TH3TvbPDLf6tOrzMUPEyN7AoEie",
 		JWTKey:        "Y3OYHx7Y1KsRJPzJKqHGWfEaHsPbmwwSpPrXcND95Pw=",
 		TTL:           300,

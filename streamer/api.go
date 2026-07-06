@@ -345,9 +345,8 @@ func APIServer(log *slog.Logger) {
 	router.HandleFunc("/refresh-token", refreshTokenHandler).Methods("GET")
 	router.HandleFunc("/logout", logoutHandler).Methods("POST")
 
-	// Add web admin and route by default
+	// Add route by default
 	router.Path("/").Handler(http.RedirectHandler("/admin/", http.StatusSeeOther))
-	router.PathPrefix("/admin").Handler(http.FileServer(http.FS(webDist)))
 
 	// Start the engine
 	log.Debug("Starting api server", "config", config.Server)
